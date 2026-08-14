@@ -10,6 +10,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -41,6 +42,7 @@ class MainActivity : ComponentActivity() {
 fun ReminderApp(viewModel: ReminderViewModel = viewModel()) {
     val reminders by viewModel.reminders.collectAsState()
     var showAddDialog by remember { mutableStateOf(value = false) }
+    var editingReminder by remember { mutableStateOf<Reminder?>(null) }
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
@@ -63,26 +65,43 @@ fun ReminderApp(viewModel: ReminderViewModel = viewModel()) {
                     items(reminders, key = { it.id }) { reminder ->
                         ReminderItem(
                             reminder = reminder,
-                            onToggle = { viewModel.toggleReminderCompletion(reminder) }
-                        ) { viewModel.deleteReminder(reminder) }
+                            onToggle = { viewModel.toggleReminderCompletion(reminder) },
+                            onEdit = { editingReminder = reminder },
+                            onDelete = { viewModel.deleteReminder(reminder) }
+                        )
                     }
                 }
             }
         }
 
         if (showAddDialog) {
-            AddReminderDialog(
+            ReminderDialog(
                 onDismiss = { showAddDialog = false }
             ) { title, desc, time ->
                 viewModel.addReminder(title, desc, time)
                 showAddDialog = false
             }
         }
+
+        editingReminder?.let { reminder ->
+            ReminderDialog(
+                reminder = reminder,
+                onDismiss = { editingReminder = null }
+            ) { title, desc, time ->
+                viewModel.updateReminder(reminder, title, desc, time)
+                editingReminder = null
+            }
+        }
     }
 }
 
 @Composable
-fun ReminderItem(reminder: Reminder, onToggle: () -> Unit, onDelete: () -> Unit) {
+fun ReminderItem(
+    reminder: Reminder,
+    onToggle: () -> Unit,
+    onEdit: () -> Unit,
+    onDelete: () -> Unit
+) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -122,8 +141,13 @@ fun ReminderItem(reminder: Reminder, onToggle: () -> Unit, onDelete: () -> Unit)
                     )
                 }
             }
-            IconButton(onClick = onDelete) {
-                Icon(Icons.Default.Delete, contentDescription = "Delete", tint = MaterialTheme.colorScheme.error)
+            Row {
+                IconButton(onClick = onEdit) {
+                    Icon(Icons.Default.Edit, contentDescription = "Edit")
+                }
+                IconButton(onClick = onDelete) {
+                    Icon(Icons.Default.Delete, contentDescription = "Delete", tint = MaterialTheme.colorScheme.error)
+                }
             }
         }
     }
@@ -131,23 +155,52 @@ fun ReminderItem(reminder: Reminder, onToggle: () -> Unit, onDelete: () -> Unit)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AddReminderDialog(onDismiss: () -> Unit, onConfirm: (String, String, Long?) -> Unit) {
-    var title by remember { mutableStateOf("") }
-    var description by remember { mutableStateOf("") }
-    var selectedDate by remember { mutableStateOf<Long?>(null) }
-    var selectedHour by remember { mutableIntStateOf(0) }
-    var selectedMinute by remember { mutableIntStateOf(0) }
-    var hasTime by remember { mutableStateOf(false) }
+fun ReminderDialog(
+    reminder: Reminder? = null,
+    onDismiss: () -> Unit,
+    onConfirm: (String, String, Long?) -> Unit
+) {
+    val calendar = remember(reminder) {
+        Calendar.getInstance().apply {
+            if (reminder?.reminderTime != null) {
+                timeInMillis = reminder.reminderTime
+            } else {
+                add(Calendar.HOUR_OF_DAY, 1)
+            }
+        }
+    }
+    
+    val initialDate = remember(reminder) {
+        Calendar.getInstance().apply {
+            if (reminder?.reminderTime != null) {
+                timeInMillis = reminder.reminderTime
+            }
+            set(Calendar.HOUR_OF_DAY, 0)
+            set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+        }.timeInMillis
+    }
+
+    var title by remember { mutableStateOf(reminder?.title ?: "") }
+    var description by remember { mutableStateOf(reminder?.description ?: "") }
+    var selectedDate by remember { mutableStateOf<Long?>(initialDate) }
+    var selectedHour by remember { mutableIntStateOf(calendar.get(Calendar.HOUR_OF_DAY)) }
+    var selectedMinute by remember { mutableIntStateOf(calendar.get(Calendar.MINUTE)) }
+    var hasTime by remember { mutableStateOf(reminder?.reminderTime != null || reminder == null) }
 
     var showDatePicker by remember { mutableStateOf(false) }
     var showTimePicker by remember { mutableStateOf(false) }
 
-    val datePickerState = rememberDatePickerState()
-    val timePickerState = rememberTimePickerState()
+    val datePickerState = rememberDatePickerState(initialSelectedDateMillis = initialDate)
+    val timePickerState = rememberTimePickerState(
+        initialHour = selectedHour,
+        initialMinute = selectedMinute
+    )
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Add Reminder") },
+        title = { Text(if (reminder == null) "Add Reminder" else "Edit Reminder") },
         text = {
             Column {
                 TextField(
@@ -220,7 +273,7 @@ fun AddReminderDialog(onDismiss: () -> Unit, onConfirm: (String, String, Long?) 
                 },
                 enabled = title.isNotBlank()
             ) {
-                Text("Add")
+                Text(if (reminder == null) "Add" else "Save")
             }
         },
         dismissButton = {

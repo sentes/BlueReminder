@@ -38,6 +38,13 @@ class ReminderViewModel(application: Application) : AndroidViewModel(application
         }
     }
 
+    fun updateReminder(reminder: Reminder, title: String, description: String, reminderTime: Long?) {
+        if (title.isBlank()) return
+        viewModelScope.launch {
+            repository.update(reminder.copy(title = title, description = description, reminderTime = reminderTime))
+        }
+    }
+
     fun deleteReminder(reminder: Reminder) {
         viewModelScope.launch {
             repository.delete(reminder)

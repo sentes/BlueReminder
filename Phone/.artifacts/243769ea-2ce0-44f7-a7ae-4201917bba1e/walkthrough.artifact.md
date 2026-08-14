@@ -1,31 +1,23 @@
-# Reminders App with Date/Time Walkthrough
+# Reminders App with Editing Walkthrough
 
-I have added support for scheduling reminders with a specific date and time.
+I have added full editing support for reminders.
 
 ## Changes Made
 
-### Data Layer
-- **Schema Update**: Added `reminderTime: Long?` to the `Reminder` entity.
-- **Migration**: Bumped Room database version to 2 and enabled destructive migration to apply the new schema.
+### Data & Logic
+- **ViewModel**: Added `updateReminder` to [ReminderViewModel.kt](file:///C:/git/BlueReminder/Phone/app/src/main/java/com/sentes/bluereminder/ui/ReminderViewModel.kt) to handle updating existing records in the database.
 
-### UI Layer
-- **Add Reminder Dialog**:
-    - Integrated Material 3 `DatePicker` and `TimePicker`.
-    - Added buttons to open date and time pickers.
-    - Added logic to combine selected date and time into a single timestamp.
-- **Reminder List**:
-    - Updated `ReminderItem` to display the scheduled date and time using `SimpleDateFormat`.
-    - The scheduled time is displayed in a distinct color below the description.
+### UI Enhancements
+- **Refactored Dialog**: The `AddReminderDialog` was renamed to `ReminderDialog` and updated to handle both creation and editing. It now pre-fills with existing data when an edit is initiated.
+- **Edit Action**: Each reminder in the list now has an "Edit" icon. Tapping it opens the dialog in edit mode.
+- **Improved Interaction**: The "Save" button in edit mode is only enabled if the title is not blank, maintaining data integrity.
 
 ## Verification Results
 - **Build**: Successfully compiled the project.
 - **Functionality**:
-    - [x] Date and time selection in the add dialog.
-    - [x] Correct display of scheduled time in the list.
-    - [x] Data persistence of the new field.
-
-> [!WARNING]
-> **Database Reset**: Due to the destructive migration, all previous reminders have been cleared to make room for the new schema.
+    - [x] Pre-filling of dialog with existing title, description, and time.
+    - [x] Successful update of reminder in the list and database.
+    - [x] Completion status remains unchanged after editing other fields.
 
 > [!TIP]
-> When adding a reminder, you can now tap "Set Date" and "Set Time" to schedule it!
+> Use the pencil icon on any reminder to refine its details or reschedule it!
