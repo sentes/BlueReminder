@@ -5,6 +5,10 @@ import kotlinx.coroutines.flow.Flow
 class ReminderRepository(private val reminderDao: ReminderDao) {
     val allReminders: Flow<List<Reminder>> = reminderDao.getAllReminders()
 
+    suspend fun getOverdueReminders(currentTime: Long): List<Reminder> {
+        return reminderDao.getOverdueReminders(currentTime)
+    }
+
     suspend fun insert(reminder: Reminder) {
         reminderDao.insertReminder(reminder)
     }

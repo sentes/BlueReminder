@@ -13,6 +13,9 @@ interface ReminderDao {
     @Query("SELECT * FROM reminders ORDER BY createdAt DESC")
     fun getAllReminders(): Flow<List<Reminder>>
 
+    @Query("SELECT * FROM reminders WHERE isCompleted = 0 AND reminderTime IS NOT NULL AND reminderTime < :currentTime")
+    suspend fun getOverdueReminders(currentTime: Long): List<Reminder>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertReminder(reminder: Reminder)
 
