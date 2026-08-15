@@ -1,5 +1,6 @@
 package com.sentes.bluereminder.service
 
+import android.app.AlarmManager
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -17,18 +18,10 @@ import kotlinx.coroutines.*
 class MainForegroundService : Service() {
 
     private val CHANNEL_ID = "BlueMainForegroundServiceChannel"
-    private val OVERDUE_CHANNEL_ID = "BlueOverdueRemindersChannel"
     private val NOTIFICATION_ID_FOREGROUND = 1
-    private val NOTIFICATION_ID_OVERDUE = 2
-
-    private lateinit var repository: ReminderRepository
-    private var overdueCheckJob: Job? = null
-    private val serviceScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
     override fun onCreate() {
         super.onCreate()
-        val dao = ReminderDatabase.getDatabase(this).reminderDao()
-        repository = ReminderRepository(dao)
         createNotificationChannels()
     }
 
@@ -36,58 +29,13 @@ class MainForegroundService : Service() {
         val notification = createNotification()
         startForeground(NOTIFICATION_ID_FOREGROUND, notification)
 
-        startOverdueCheck()
+        scheduleOverdueAlarm()
 
         return START_STICKY
     }
 
-    override fun onDestroy() {
-        super.onDestroy()
-        overdueCheckJob?.cancel()
-        serviceScope.cancel()
-    }
-
-    private fun startOverdueCheck() {
-        if (overdueCheckJob?.isActive == true) return
-
-        overdueCheckJob = serviceScope.launch {
-            while (isActive) {
-                checkOverdueReminders()
-                delay(15 * 60 * 1000) // 15 minutes
-            }
-        }
-    }
-
-    private suspend fun checkOverdueReminders() {
-        val overdueReminders = repository.getOverdueReminders(System.currentTimeMillis())
-        val notificationManager = getSystemService(NotificationManager::class.java)
-
-        if (overdueReminders.isNotEmpty()) {
-            val contentText = if (overdueReminders.size == 1) {
-                "Masz 1 zaległe przypomnienie: ${overdueReminders[0].title}"
-            } else {
-                "Masz ${overdueReminders.size} zaległych przypomnień"
-            }
-
-            val intent = Intent(this, MainActivity::class.java)
-            val pendingIntent = PendingIntent.getActivity(
-                this, 0, intent,
-                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-            )
-
-            val notification = NotificationCompat.Builder(this, OVERDUE_CHANNEL_ID)
-                .setContentTitle("Zaległe przypomnienia")
-                .setContentText(contentText)
-                .setSmallIcon(android.R.drawable.ic_lock_idle_alarm)
-                .setPriority(NotificationCompat.PRIORITY_DEFAULT)
-                .setContentIntent(pendingIntent)
-                .setAutoCancel(true)
-                .build()
-
-            notificationManager.notify(NOTIFICATION_ID_OVERDUE, notification)
-        } else {
-            notificationManager.cancel(NOTIFICATION_ID_OVERDUE)
-        }
+    private fun scheduleOverdueAlarm() {
+        OverdueAlarmScheduler.scheduleNextAlarm(this)
     }
 
     override fun onBind(intent: Intent?): IBinder? = null
@@ -113,7 +61,7 @@ class MainForegroundService : Service() {
         manager.createNotificationChannel(serviceChannel)
 
         val overdueChannel = NotificationChannel(
-            OVERDUE_CHANNEL_ID,
+            OverdueReminderReceiver.OVERDUE_CHANNEL_ID,
             "Overdue Reminders",
             NotificationManager.IMPORTANCE_DEFAULT
         ).apply {
