@@ -10,7 +10,7 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface ReminderDao {
-    @Query("SELECT * FROM reminders ORDER BY createdAt DESC")
+    @Query("SELECT * FROM reminders ORDER BY isCompleted ASC, reminderTime IS NULL ASC, reminderTime ASC, createdAt DESC")
     fun getAllReminders(): Flow<List<Reminder>>
 
     @Query("SELECT * FROM reminders WHERE isCompleted = 0 AND reminderTime IS NOT NULL AND reminderTime < :currentTime")

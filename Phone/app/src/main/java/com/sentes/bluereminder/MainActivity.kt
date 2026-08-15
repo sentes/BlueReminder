@@ -28,6 +28,9 @@ import com.sentes.bluereminder.service.MainForegroundService
 import com.sentes.bluereminder.ui.ReminderViewModel
 import com.sentes.bluereminder.ui.theme.BlueReminderTheme
 import java.text.SimpleDateFormat
+import java.time.Instant
+import java.time.LocalDate
+import java.time.ZoneId
 import java.util.*
 
 class MainActivity : ComponentActivity() {
@@ -65,12 +68,39 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+enum class ReminderGroup(val title: String) {
+    Today("Today"),
+    Tomorrow("Tomorrow"),
+    Later("Later")
+}
+
+private fun getReminderGroup(reminderTime: Long?): ReminderGroup {
+    if (reminderTime == null) return ReminderGroup.Later
+    
+    val reminderDate = Instant.ofEpochMilli(reminderTime)
+        .atZone(ZoneId.systemDefault())
+        .toLocalDate()
+    val today = LocalDate.now()
+    val tomorrow = today.plusDays(1)
+
+    return when {
+        reminderDate.isBefore(tomorrow) -> ReminderGroup.Today
+        reminderDate.isEqual(tomorrow) -> ReminderGroup.Tomorrow
+        else -> ReminderGroup.Later
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class, androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
 fun ReminderApp(viewModel: ReminderViewModel = viewModel()) {
     val reminders by viewModel.reminders.collectAsState()
     var showAddDialog by remember { mutableStateOf(value = false) }
     var editingReminder by remember { mutableStateOf<Reminder?>(null) }
+
+    val groupedReminders = remember(reminders) {
+        reminders.groupBy { getReminderGroup(it.reminderTime) }
+            .toSortedMap(compareBy { it.ordinal })
+    }
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
@@ -90,13 +120,28 @@ fun ReminderApp(viewModel: ReminderViewModel = viewModel()) {
                 }
             } else {
                 LazyColumn {
-                    items(reminders, key = { it.id }) { reminder ->
-                        ReminderItem(
-                            reminder = reminder,
-                            onToggle = { viewModel.toggleReminderCompletion(reminder) },
-                            onEdit = { editingReminder = reminder },
-                            onDelete = { viewModel.deleteReminder(reminder) }
-                        )
+                    groupedReminders.forEach { (group, remindersInGroup) ->
+                        stickyHeader {
+                            Surface(
+                                modifier = Modifier.fillMaxWidth(),
+                                color = MaterialTheme.colorScheme.surfaceVariant
+                            ) {
+                                Text(
+                                    text = group.title,
+                                    style = MaterialTheme.typography.titleSmall,
+                                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                        items(remindersInGroup, key = { it.id }) { reminder ->
+                            ReminderItem(
+                                reminder = reminder,
+                                onToggle = { viewModel.toggleReminderCompletion(reminder) },
+                                onEdit = { editingReminder = reminder },
+                                onDelete = { viewModel.deleteReminder(reminder) }
+                            )
+                        }
                     }
                 }
             }
