@@ -5,9 +5,13 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -106,7 +110,11 @@ fun WearApp(viewModel: MainViewModel) {
                                 }
                             } else {
                                 items(reminders, key = { it.id }) { reminder ->
-                                    ReminderItem(reminder, transformationSpec)
+                                    ReminderItem(
+                                        reminder,
+                                        transformationSpec,
+                                        onSnooze = { viewModel.snoozeReminder(reminder) }
+                                    )
                                 }
                             }
                         }
@@ -126,34 +134,56 @@ fun WearApp(viewModel: MainViewModel) {
 @Composable
 fun TransformingLazyColumnItemScope.ReminderItem(
     reminder: Reminder,
-    transformationSpec: TransformationSpec
+    transformationSpec: TransformationSpec,
+    onSnooze: () -> Unit
 ) {
     val timeFormatter = DateTimeFormatter.ofPattern("HH:mm")
     val isOverdue = reminder.reminderTime.isBefore(LocalDateTime.now())
-    
-    Button(
-        onClick = { /* Handle click if needed */ },
-        modifier = Modifier.fillMaxWidth()
-            .transformedHeight(this, transformationSpec),
-        transformation = SurfaceTransformation(transformationSpec),
-        colors = if (isOverdue) {
-            ButtonDefaults.buttonColors(
-                containerColor = MaterialTheme.colorScheme.errorContainer,
-                contentColor = MaterialTheme.colorScheme.onErrorContainer
-            )
-        } else {
-            ButtonDefaults.buttonColors()
-        }
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .transformedHeight(this, transformationSpec)
+            .padding(vertical = 2.dp),
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        Column(modifier = Modifier.fillMaxWidth().padding(4.dp)) {
-            Text(
-                text = reminder.title,
-                style = MaterialTheme.typography.titleMedium
+        Button(
+            onClick = { /* Handle click if needed */ },
+            modifier = Modifier.weight(1f),
+            transformation = SurfaceTransformation(transformationSpec),
+            colors = if (isOverdue) {
+                ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.errorContainer,
+                    contentColor = MaterialTheme.colorScheme.onErrorContainer
+                )
+            } else {
+                ButtonDefaults.buttonColors()
+            }
+        ) {
+            Column(modifier = Modifier.fillMaxWidth().padding(4.dp)) {
+                Text(
+                    text = reminder.title,
+                    style = MaterialTheme.typography.titleMedium
+                )
+                Text(
+                    text = reminder.reminderTime.format(timeFormatter),
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
+        }
+        
+        Spacer(modifier = Modifier.width(4.dp))
+        
+        Button(
+            onClick = onSnooze,
+            modifier = Modifier.size(width = 52.dp, height = 52.dp),
+            transformation = SurfaceTransformation(transformationSpec),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.tertiaryContainer,
+                contentColor = MaterialTheme.colorScheme.onTertiaryContainer
             )
-            Text(
-                text = reminder.reminderTime.format(timeFormatter),
-                style = MaterialTheme.typography.bodySmall
-            )
+        ) {
+            Text("+1h", style = MaterialTheme.typography.labelSmall)
         }
     }
 }

@@ -1,2 +1,4 @@
-- `[x]` Update `MainActivity.kt` to highlight overdue reminders
+- `[x]` Add `snoozeReminder` to `PhoneService.kt`
+- `[x]` Add `snoozeReminder` to `MainViewModel.kt`
+- `[x]` Update `ReminderItem` in `MainActivity.kt` to include a snooze button
 - `[x]` Verify build

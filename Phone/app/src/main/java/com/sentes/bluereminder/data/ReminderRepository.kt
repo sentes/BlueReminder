@@ -13,6 +13,10 @@ class ReminderRepository(private val reminderDao: ReminderDao) {
         return reminderDao.getTodayUnfinishedReminders(endOfDayTimestamp)
     }
 
+    suspend fun getReminderById(id: Long): Reminder? {
+        return reminderDao.getReminderById(id)
+    }
+
     suspend fun insert(reminder: Reminder) {
         reminderDao.insertReminder(reminder)
     }

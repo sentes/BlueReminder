@@ -31,4 +31,14 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             }
         }
     }
+
+    fun snoozeReminder(reminder: Reminder) {
+        viewModelScope.launch {
+            try {
+                phoneService.snoozeReminder(reminder.id)
+            } catch (e: Exception) {
+                // Handle error
+            }
+        }
+    }
 }

@@ -30,7 +30,24 @@ class PhoneListenerService : WearableListenerService() {
     override fun onMessageReceived(messageEvent: MessageEvent) {
         Log.d(TAG, "onMessageReceived(): ${messageEvent.path}")
 
-        if (messageEvent.path == "/reminder/get_today") {
+        if (messageEvent.path == "/reminder/snooze") {
+            serviceScope.launch {
+                try {
+                    val reminderId = String(messageEvent.data, Charsets.UTF_8).toLongOrNull()
+                    if (reminderId != null) {
+                        val reminder = repository.getReminderById(reminderId)
+                        if (reminder != null) {
+                            val baseTime = reminder.reminderTime ?: System.currentTimeMillis()
+                            val newTime = baseTime + (60 * 60 * 1000) // Add 1 hour
+                            repository.update(reminder.copy(reminderTime = newTime, isCompleted = false))
+                            Log.d(TAG, "Reminder $reminderId snoozed by 1 hour")
+                        }
+                    }
+                } catch (e: Exception) {
+                    Log.e(TAG, "Error snoozing reminder", e)
+                }
+            }
+        } else if (messageEvent.path == "/reminder/get_today") {
             serviceScope.launch {
                 try {
                     val endOfDay = LocalDate.now().atTime(LocalTime.MAX)
