@@ -1,4 +1,3 @@
-- `[x]` Update `Reminder.kt` to use `LocalDateTime`
-- `[x]` Update `WatchListenerService.kt` to parse `LocalDateTime`
-- `[x]` Update `MainActivity.kt` to format `LocalDateTime`
+- `[x]` Add `isLoading` state to `MainViewModel.kt`
+- `[x]` Update `MainActivity.kt` to display `CircularProgressIndicator`
 - `[x]` Verify build

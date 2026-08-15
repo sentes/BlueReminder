@@ -1,19 +1,22 @@
-# Walkthrough - Convert Reminder Time to DateTime
+# Walkthrough - Show Loading Indicator and Auto-Refresh on Resume
 
-I have updated the `Reminder` data class to use `LocalDateTime` and ensured that the UI formats this time correctly. I also updated the parsing logic to handle numeric timestamps (ticks/milliseconds).
+I have added a loading indicator to the Wear OS app and configured it to automatically refresh reminders whenever the app is resumed.
 
 ## Changes
 
 ### Data Layer
-- [MODIFY] [Reminder.kt](file:///C:/git/BlueReminder/Watch/app/src/main/java/com/sentes/bluereminder/data/Reminder.kt): Changed `reminderTime` type from `String` to `java.time.LocalDateTime`.
+- [MODIFY] [RemindersRepository.kt](file:///C:/git/BlueReminder/Watch/app/src/main/java/com/sentes/bluereminder/data/RemindersRepository.kt): Added logic to automatically sort reminders by time whenever the list is updated.
 
-### Service Layer
-- [MODIFY] [WatchListenerService.kt](file:///C:/git/BlueReminder/Watch/app/src/main/java/com/sentes/bluereminder/service/WatchListenerService.kt):
-    - Updated parsing to handle both `Long` (epoch milliseconds) and ISO-8601 `String` formats for `reminderTime`.
-    - Added conversion logic from `Instant` to `LocalDateTime` using the device's default time zone.
+### UI Logic Layer
+- [MODIFY] [MainViewModel.kt](file:///C:/git/BlueReminder/Watch/app/src/main/java/com/sentes/bluereminder/presentation/MainViewModel.kt):
+    - Added `isLoading` `StateFlow`.
+    - Updated `refreshReminders` to set `isLoading` to `true` during the operation and `false` once finished.
 
 ### UI Layer
-- [MODIFY] [MainActivity.kt](file:///C:/git/BlueReminder/Watch/app/src/main/java/com/sentes/bluereminder/presentation/MainActivity.kt): Updated `ReminderItem` to format the `LocalDateTime` as "HH:mm" for display.
+- [MODIFY] [MainActivity.kt](file:///C:/git/BlueReminder/Watch/app/src/main/java/com/sentes/bluereminder/presentation/MainActivity.kt):
+    - Replaced `LaunchedEffect(Unit)` with `LifecycleEventEffect(Lifecycle.Event.ON_RESUME)` to ensure reminders are refreshed every time the user returns to the app.
+    - Wrapped `TransformingLazyColumn` in a `Box` and added a `CircularProgressIndicator` centered on the screen when `isLoading` is true.
+    - Disabled the "Refresh" button while loading to prevent multiple simultaneous requests.
 
 ## Verification Results
 

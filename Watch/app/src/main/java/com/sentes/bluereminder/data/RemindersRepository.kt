@@ -9,6 +9,6 @@ object RemindersRepository {
     val reminders: StateFlow<List<Reminder>> = _reminders.asStateFlow()
 
     fun updateReminders(newList: List<Reminder>) {
-        _reminders.value = newList
+        _reminders.value = newList.sortedBy { it.reminderTime }
     }
 }

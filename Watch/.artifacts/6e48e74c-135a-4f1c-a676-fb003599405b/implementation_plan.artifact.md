@@ -1,25 +1,25 @@
-# Convert Reminder Time to DateTime
+# Show Loading Indicator for Reminders
 
-Update the `Reminder` data class to use `LocalDateTime` for the reminder time, ensuring better type safety and enabling easier formatting in the UI.
+Add a loading indicator to the Wear OS app to provide feedback to the user while reminders are being requested from the phone.
 
 ## Proposed Changes
 
-### Data Layer
+### UI Logic Layer
 
-#### [MODIFY] [Reminder.kt](file:///C:/git/BlueReminder/Watch/app/src/main/java/com/sentes/bluereminder/data/Reminder.kt)
-- Change `reminderTime: String` to `reminderTime: java.time.LocalDateTime`.
-
-### Service Layer
-
-#### [MODIFY] [WatchListenerService.kt](file:///C:/git/BlueReminder/Watch/app/src/main/java/com/sentes/bluereminder/service/WatchListenerService.kt)
-- Update JSON parsing to convert the incoming time string to `LocalDateTime` using `LocalDateTime.parse()`.
+#### [MODIFY] [MainViewModel.kt](file:///C:/git/BlueReminder/Watch/app/src/main/java/com/sentes/bluereminder/presentation/MainViewModel.kt)
+- Add an `isLoading` `StateFlow` to track the status of the reminder request.
+- Update `refreshReminders()` to toggle `isLoading`.
 
 ### UI Layer
 
 #### [MODIFY] [MainActivity.kt](file:///C:/git/BlueReminder/Watch/app/src/main/java/com/sentes/bluereminder/presentation/MainActivity.kt)
-- Update `ReminderItem` to format the `LocalDateTime` into a human-readable string (e.g., "HH:mm").
+- Observe the `isLoading` state from the `MainViewModel`.
+- Display a `CircularProgressIndicator` when `isLoading` is true.
+- If not loading and the list is empty, continue showing the "No reminders" message.
 
 ## Verification Plan
 
-### Automated Tests
-- Run `./gradlew :app:assembleDebug` to ensure the project compiles with the new types.
+### Manual Verification
+- Launch the app and verify the loading indicator appears initially while it fetches reminders.
+- Press the "Refresh" button and verify the loading indicator appears again.
+- Ensure the indicator disappears once the request to the phone is completed.

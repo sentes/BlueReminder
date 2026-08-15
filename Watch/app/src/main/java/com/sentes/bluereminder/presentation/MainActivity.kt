@@ -3,15 +3,20 @@ package com.sentes.bluereminder.presentation
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.wear.compose.foundation.lazy.TransformingLazyColumn
@@ -21,6 +26,7 @@ import androidx.wear.compose.foundation.lazy.rememberTransformingLazyColumnState
 import androidx.wear.compose.material3.AppScaffold
 import androidx.wear.compose.material3.Button
 import androidx.wear.compose.material3.ButtonDefaults
+import androidx.wear.compose.material3.CircularProgressIndicator
 import androidx.wear.compose.material3.EdgeButton
 import androidx.wear.compose.material3.ListHeader
 import androidx.wear.compose.material3.MaterialTheme
@@ -50,8 +56,9 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun WearApp(viewModel: MainViewModel) {
     val reminders by viewModel.reminders.collectAsStateWithLifecycle()
+    val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
 
-    LaunchedEffect(Unit) {
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
         viewModel.refreshReminders()
     }
 
@@ -64,6 +71,7 @@ fun WearApp(viewModel: MainViewModel) {
                 edgeButton = {
                     EdgeButton(
                         onClick = { viewModel.refreshReminders() },
+                        enabled = !isLoading,
                         colors =
                             ButtonDefaults.buttonColors(
                                 containerColor = MaterialTheme.colorScheme.secondaryContainer,
@@ -74,29 +82,39 @@ fun WearApp(viewModel: MainViewModel) {
                     }
                 },
             ) { contentPadding ->
-                TransformingLazyColumn(contentPadding = contentPadding, state = listState) {
-                    item {
-                        ListHeader(
-                            modifier =
-                                Modifier.fillMaxWidth().transformedHeight(this, transformationSpec),
-                            transformation = SurfaceTransformation(transformationSpec),
-                        ) {
-                            Text(text = stringResource(R.string.today_reminders))
+                Box(modifier = Modifier.fillMaxSize()) {
+                    TransformingLazyColumn(contentPadding = contentPadding, state = listState) {
+                        item {
+                            ListHeader(
+                                modifier =
+                                    Modifier.fillMaxWidth().transformedHeight(this, transformationSpec),
+                                transformation = SurfaceTransformation(transformationSpec),
+                            ) {
+                                Text(text = stringResource(R.string.today_reminders))
+                            }
+                        }
+
+                        if (!isLoading) {
+                            if (reminders.isEmpty()) {
+                                item {
+                                    Text(
+                                        text = "No reminders for today",
+                                        modifier = Modifier.padding(16.dp),
+                                        style = MaterialTheme.typography.bodyMedium
+                                    )
+                                }
+                            } else {
+                                items(reminders, key = { it.id }) { reminder ->
+                                    ReminderItem(reminder, transformationSpec)
+                                }
+                            }
                         }
                     }
 
-                    if (reminders.isEmpty()) {
-                        item {
-                            Text(
-                                text = "No reminders for today",
-                                modifier = Modifier.padding(16.dp),
-                                style = MaterialTheme.typography.bodyMedium
-                            )
-                        }
-                    } else {
-                        items(reminders, key = { it.id }) { reminder ->
-                            ReminderItem(reminder, transformationSpec)
-                        }
+                    if (isLoading) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.align(Alignment.Center)
+                        )
                     }
                 }
             }
