@@ -139,7 +139,8 @@ fun ReminderApp(viewModel: ReminderViewModel = viewModel()) {
                                 reminder = reminder,
                                 onToggle = { viewModel.toggleReminderCompletion(reminder) },
                                 onEdit = { editingReminder = reminder },
-                                onDelete = { viewModel.deleteReminder(reminder) }
+                                onDelete = { viewModel.deleteReminder(reminder) },
+                                onPostpone = { viewModel.postponeReminder(reminder) }
                             )
                         }
                     }
@@ -173,7 +174,8 @@ fun ReminderItem(
     reminder: Reminder,
     onToggle: () -> Unit,
     onEdit: () -> Unit,
-    onDelete: () -> Unit
+    onDelete: () -> Unit,
+    onPostpone: () -> Unit
 ) {
     Card(
         modifier = Modifier
@@ -214,7 +216,10 @@ fun ReminderItem(
                     )
                 }
             }
-            Row {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                TextButton(onClick = onPostpone) {
+                    Text("+1h")
+                }
                 IconButton(onClick = onEdit) {
                     Icon(Icons.Default.Edit, contentDescription = "Edit")
                 }
@@ -317,8 +322,30 @@ fun ReminderDialog(
                             text = if (hasTime) String.format(Locale.getDefault(), "%02d:%02d", selectedHour, selectedMinute) else "No time set",
                             style = MaterialTheme.typography.bodyMedium
                         )
-                        Button(onClick = { showTimePicker = true }) {
-                            Text("Set Time")
+                        Row {
+                            TextButton(onClick = {
+                                val cal = Calendar.getInstance().apply {
+                                    timeInMillis = selectedDate!!
+                                    set(Calendar.HOUR_OF_DAY, selectedHour)
+                                    set(Calendar.MINUTE, selectedMinute)
+                                    add(Calendar.HOUR_OF_DAY, 1)
+                                }
+                                selectedHour = cal.get(Calendar.HOUR_OF_DAY)
+                                selectedMinute = cal.get(Calendar.MINUTE)
+                                selectedDate = cal.apply {
+                                    set(Calendar.HOUR_OF_DAY, 0)
+                                    set(Calendar.MINUTE, 0)
+                                    set(Calendar.SECOND, 0)
+                                    set(Calendar.MILLISECOND, 0)
+                                }.timeInMillis
+                                hasTime = true
+                            }) {
+                                Text("+1h")
+                            }
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Button(onClick = { showTimePicker = true }) {
+                                Text("Set Time")
+                            }
                         }
                     }
                 }
