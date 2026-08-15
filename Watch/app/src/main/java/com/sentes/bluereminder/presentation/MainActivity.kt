@@ -33,6 +33,7 @@ import androidx.wear.compose.material3.MaterialTheme
 import androidx.wear.compose.material3.ScreenScaffold
 import androidx.wear.compose.material3.SurfaceTransformation
 import androidx.wear.compose.material3.Text
+import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import androidx.wear.compose.material3.lazy.TransformationSpec
 import androidx.wear.compose.material3.lazy.rememberTransformationSpec
@@ -128,11 +129,21 @@ fun TransformingLazyColumnItemScope.ReminderItem(
     transformationSpec: TransformationSpec
 ) {
     val timeFormatter = DateTimeFormatter.ofPattern("HH:mm")
+    val isOverdue = reminder.reminderTime.isBefore(LocalDateTime.now())
+    
     Button(
         onClick = { /* Handle click if needed */ },
         modifier = Modifier.fillMaxWidth()
             .transformedHeight(this, transformationSpec),
         transformation = SurfaceTransformation(transformationSpec),
+        colors = if (isOverdue) {
+            ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.errorContainer,
+                contentColor = MaterialTheme.colorScheme.onErrorContainer
+            )
+        } else {
+            ButtonDefaults.buttonColors()
+        }
     ) {
         Column(modifier = Modifier.fillMaxWidth().padding(4.dp)) {
             Text(

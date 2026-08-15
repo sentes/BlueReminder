@@ -1,3 +1,2 @@
-- `[x]` Add `isLoading` state to `MainViewModel.kt`
-- `[x]` Update `MainActivity.kt` to display `CircularProgressIndicator`
+- `[x]` Update `MainActivity.kt` to highlight overdue reminders
 - `[x]` Verify build

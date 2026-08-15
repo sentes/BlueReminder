@@ -1,24 +1,20 @@
-# Walkthrough - Show Loading Indicator and Auto-Refresh on Resume
+# Walkthrough - Highlight Overdue Reminders
 
-I have added a loading indicator to the Wear OS app and configured it to automatically refresh reminders whenever the app is resumed.
+I have updated the Wear OS app to highlight reminders that are past their scheduled time with a red background.
 
 ## Changes
 
-### Data Layer
-- [MODIFY] [RemindersRepository.kt](file:///C:/git/BlueReminder/Watch/app/src/main/java/com/sentes/bluereminder/data/RemindersRepository.kt): Added logic to automatically sort reminders by time whenever the list is updated.
-
-### UI Logic Layer
-- [MODIFY] [MainViewModel.kt](file:///C:/git/BlueReminder/Watch/app/src/main/java/com/sentes/bluereminder/presentation/MainViewModel.kt):
-    - Added `isLoading` `StateFlow`.
-    - Updated `refreshReminders` to set `isLoading` to `true` during the operation and `false` once finished.
-
 ### UI Layer
 - [MODIFY] [MainActivity.kt](file:///C:/git/BlueReminder/Watch/app/src/main/java/com/sentes/bluereminder/presentation/MainActivity.kt):
-    - Replaced `LaunchedEffect(Unit)` with `LifecycleEventEffect(Lifecycle.Event.ON_RESUME)` to ensure reminders are refreshed every time the user returns to the app.
-    - Wrapped `TransformingLazyColumn` in a `Box` and added a `CircularProgressIndicator` centered on the screen when `isLoading` is true.
-    - Disabled the "Refresh" button while loading to prevent multiple simultaneous requests.
+    - Updated `ReminderItem` to check if a reminder is overdue by comparing `reminderTime` with `LocalDateTime.now()`.
+    - Applied `MaterialTheme.colorScheme.errorContainer` as the background color for overdue items.
 
 ## Verification Results
 
 ### Automated Tests
 - Ran `./gradlew :app:assembleDebug`: **PASSED**
+
+## How to Test
+1. Launch the app on a Wear OS device.
+2. If there are reminders with a scheduled time earlier than the current time, they will appear with a red background.
+3. Future reminders will continue to use the default theme colors.
