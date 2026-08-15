@@ -30,7 +30,7 @@ class PhoneListenerService : WearableListenerService() {
     override fun onMessageReceived(messageEvent: MessageEvent) {
         Log.d(TAG, "onMessageReceived(): ${messageEvent.path}")
 
-        if (messageEvent.path == "/get_today_reminders") {
+        if (messageEvent.path == "/reminder/get_today") {
             serviceScope.launch {
                 try {
                     val endOfDay = LocalDate.now().atTime(LocalTime.MAX)
@@ -55,7 +55,7 @@ class PhoneListenerService : WearableListenerService() {
 
                     Wearable.getMessageClient(this@PhoneListenerService)
                         .sendMessage(
-                            messageEvent.sourceNodeId, "/today_reminders",
+                            messageEvent.sourceNodeId, "/reminder/response_get_today",
                             responseText.toByteArray()
                         )
                         .addOnSuccessListener { Log.d(TAG, "Reminders sent to wearable") }

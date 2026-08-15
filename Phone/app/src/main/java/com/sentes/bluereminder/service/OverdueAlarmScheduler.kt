@@ -21,7 +21,7 @@ object OverdueAlarmScheduler {
         )
 
         val nextTriggerTime = calculateNext15MinuteMark()
-        
+
         Log.d(TAG, "Scheduling next exact overdue check for: ${java.util.Date(nextTriggerTime)}")
 
         try {
@@ -69,7 +69,7 @@ object OverdueAlarmScheduler {
             else -> 0
         }
 
-        calendar.set(Calendar.MINUTE, currentMinute)
+        calendar.set(Calendar.MINUTE, nextMark)
         calendar.set(Calendar.SECOND, 0)
         calendar.set(Calendar.MILLISECOND, 0)
 

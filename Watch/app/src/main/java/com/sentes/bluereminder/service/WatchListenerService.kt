@@ -14,7 +14,7 @@ import java.time.ZoneId
 class WatchListenerService : WearableListenerService() {
     override fun onMessageReceived(event: MessageEvent) {
         Log.d("WatchListenerService", "Message received: ${event.path}")
-        if (event.path == "/today_reminders") {
+        if (event.path == "/reminder/response_get_today") {
             try {
                 val jsonArray = JSONArray(String(event.data))
                 val reminders = mutableListOf<Reminder>()
