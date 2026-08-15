@@ -1,19 +1,25 @@
-# Install Kotlin Coroutines
+# Convert Reminder Time to DateTime
 
-Add Kotlin Coroutines dependencies to the project to enable asynchronous programming.
+Update the `Reminder` data class to use `LocalDateTime` for the reminder time, ensuring better type safety and enabling easier formatting in the UI.
 
 ## Proposed Changes
 
-### Build Configuration
+### Data Layer
 
-#### [MODIFY] [libs.versions.toml](file:///C:/git/BlueReminder/Watch/gradle/libs.versions.toml)
-- Add `kotlinxCoroutines` version.
-- Add `kotlinx-coroutines-core` and `kotlinx-coroutines-android` library definitions.
+#### [MODIFY] [Reminder.kt](file:///C:/git/BlueReminder/Watch/app/src/main/java/com/sentes/bluereminder/data/Reminder.kt)
+- Change `reminderTime: String` to `reminderTime: java.time.LocalDateTime`.
 
-#### [MODIFY] [build.gradle.kts](file:///C:/git/BlueReminder/Watch/app/build.gradle.kts)
-- Add coroutines dependencies to the `app` module.
+### Service Layer
+
+#### [MODIFY] [WatchListenerService.kt](file:///C:/git/BlueReminder/Watch/app/src/main/java/com/sentes/bluereminder/service/WatchListenerService.kt)
+- Update JSON parsing to convert the incoming time string to `LocalDateTime` using `LocalDateTime.parse()`.
+
+### UI Layer
+
+#### [MODIFY] [MainActivity.kt](file:///C:/git/BlueReminder/Watch/app/src/main/java/com/sentes/bluereminder/presentation/MainActivity.kt)
+- Update `ReminderItem` to format the `LocalDateTime` into a human-readable string (e.g., "HH:mm").
 
 ## Verification Plan
 
 ### Automated Tests
-- Run `./gradlew :app:assembleDebug` to verify the build completes successfully with new dependencies.
+- Run `./gradlew :app:assembleDebug` to ensure the project compiles with the new types.

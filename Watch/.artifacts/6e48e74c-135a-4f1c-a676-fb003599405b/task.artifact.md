@@ -1,3 +1,4 @@
-- `[x]` Update `libs.versions.toml` with coroutines version and libraries
-- `[x]` Add coroutines dependencies to `app/build.gradle.kts`
-- `[x]` Sync Gradle and verify build
+- `[x]` Update `Reminder.kt` to use `LocalDateTime`
+- `[x]` Update `WatchListenerService.kt` to parse `LocalDateTime`
+- `[x]` Update `MainActivity.kt` to format `LocalDateTime`
+- `[x]` Verify build

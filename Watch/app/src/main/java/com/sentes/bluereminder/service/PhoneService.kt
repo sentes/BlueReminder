@@ -29,7 +29,7 @@ class PhoneService(
         val result =
             client.sendMessage(
                 capabilityInfo.nodes.first().id,
-                "/today_reminders",
+                "/get_today_reminders",
                 "request".toByteArray()
             )
                 .await()

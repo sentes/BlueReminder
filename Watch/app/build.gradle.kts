@@ -44,6 +44,8 @@ dependencies {
     implementation(libs.compose.material3)
     implementation(libs.compose.ui.tooling)
     implementation(libs.core.splashscreen)
+    implementation(libs.lifecycle.runtime.compose)
+    implementation(libs.lifecycle.viewmodel.compose)
     implementation(libs.kotlinx.coroutines.core)
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.kotlinx.coroutines.play.services)
