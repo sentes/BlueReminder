@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.lifecycle.lifecycleScope
 import androidx.wear.compose.foundation.lazy.TransformingLazyColumn
 import androidx.wear.compose.foundation.lazy.rememberTransformingLazyColumnState
 import androidx.wear.compose.material3.AppScaffold
@@ -29,12 +30,23 @@ import androidx.wear.compose.ui.tooling.preview.WearPreviewDevices
 import androidx.wear.compose.ui.tooling.preview.WearPreviewFontScales
 import com.sentes.bluereminder.R
 import com.sentes.bluereminder.presentation.theme.BlueReminderTheme
+import com.sentes.bluereminder.service.PhoneService
+import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
             WearApp("Android")
+        }
+
+        val phoneService = PhoneService(this)
+
+        lifecycleScope.launch {
+            // Coroutine runs here
+            phoneService.askForTodayReminders()
+
+            println("Finished")
         }
     }
 }
