@@ -11,6 +11,7 @@ activityCompose = "1.13.0"
 coreSplashscreen = "1.2.0"
 kotlinxCoroutines = "1.11.0"
 lifecycle = "2.8.7"
+wearInput = "1.2.0"
 
 [libraries]
 play-services-wearable = { group = "com.google.android.gms", name = "play-services-wearable", version.ref = "playServicesWearable" }
@@ -25,6 +26,7 @@ compose-material3 = { group = "androidx.wear.compose", name = "compose-material3
 compose-foundation = { group = "androidx.wear.compose", name = "compose-foundation", version.ref = "composeFoundation" }
 compose-ui-tooling = { group = "androidx.wear.compose", name = "compose-ui-tooling", version.ref = "composeUiTooling" }
 wear-tooling-preview = { group = "androidx.wear", name = "wear-tooling-preview", version.ref = "wearToolingPreview" }
+wear-input = { group = "androidx.wear", name = "wear-input", version.ref = "wearInput" }
 activity-compose = { group = "androidx.activity", name = "activity-compose", version.ref = "activityCompose" }
 core-splashscreen = { group = "androidx.core", name = "core-splashscreen", version.ref = "coreSplashscreen" }
 lifecycle-runtime-compose = { group = "androidx.lifecycle", name = "lifecycle-runtime-compose", version.ref = "lifecycle" }

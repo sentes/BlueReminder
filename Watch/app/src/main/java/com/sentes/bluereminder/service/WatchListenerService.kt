@@ -28,8 +28,7 @@ class WatchListenerService : WearableListenerService() {
 
             RemindersStateFlow.updateSingleReminder(reminder)
             Log.d("WatchListenerService", "Updated reminder: $reminder")
-        }
-        else if (event.path == "/reminder/response_dismiss") {
+        } else if (event.path == "/reminder/response_dismiss") {
             val jsonObject = JSONObject(String(event.data))
             val reminder = Reminder(
                 id = jsonObject.getString("id"),
@@ -41,8 +40,8 @@ class WatchListenerService : WearableListenerService() {
 
             RemindersStateFlow.updateSingleReminder(reminder)
             Log.d("WatchListenerService", "Updated reminder: $reminder")
-        }
-        else if (event.path == "/reminder/response_get_today") {
+        } else if (event.path == "/reminder/response_get_today"
+            || event.path == "/reminder/response_add") {
             try {
                 val jsonArray = JSONArray(String(event.data))
                 val reminders = mutableListOf<Reminder>()
@@ -77,6 +76,7 @@ class WatchListenerService : WearableListenerService() {
                             .atZone(ZoneId.systemDefault())
                             .toLocalDateTime()
                     }
+
                     is String -> {
                         // Try to parse as Long first (if stringified number)
                         val longValue = timeValue.toLongOrNull()
@@ -88,13 +88,18 @@ class WatchListenerService : WearableListenerService() {
                             LocalDateTime.parse(timeValue)
                         }
                     }
+
                     else -> LocalDateTime.now()
                 }
             } else {
                 return LocalDateTime.now()
             }
         } catch (e: Exception) {
-            Log.e("WatchListenerService", "Failed to parse time for reminder ${obj.optString("id")}", e)
+            Log.e(
+                "WatchListenerService",
+                "Failed to parse time for reminder ${obj.optString("id")}",
+                e
+            )
             return LocalDateTime.now()
         }
     }

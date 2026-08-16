@@ -2,7 +2,9 @@ package com.sentes.bluereminder.presentation
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -39,16 +41,18 @@ import androidx.wear.compose.material3.MaterialTheme
 import androidx.wear.compose.material3.ScreenScaffold
 import androidx.wear.compose.material3.SurfaceTransformation
 import androidx.wear.compose.material3.Text
-import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
 import androidx.wear.compose.material3.lazy.TransformationSpec
 import androidx.wear.compose.material3.lazy.rememberTransformationSpec
 import androidx.wear.compose.material3.lazy.transformedHeight
 import androidx.wear.compose.ui.tooling.preview.WearPreviewDevices
 import androidx.wear.compose.ui.tooling.preview.WearPreviewFontScales
+import androidx.wear.input.RemoteInputIntentHelper
+import android.app.RemoteInput
 import com.sentes.bluereminder.R
 import com.sentes.bluereminder.data.Reminder
 import com.sentes.bluereminder.presentation.theme.BlueReminderTheme
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -64,6 +68,19 @@ class MainActivity : ComponentActivity() {
 fun WearApp(viewModel: MainViewModel) {
     val reminders by viewModel.reminders.collectAsStateWithLifecycle()
     val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
+
+    val inputTextKey = "reminder_title"
+    val remoteInputLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        result.data?.let { intent ->
+            val results: Bundle = RemoteInput.getResultsFromIntent(intent)
+            val title: CharSequence? = results.getCharSequence(inputTextKey)
+            if (title != null && title.isNotBlank()) {
+                viewModel.addQuickReminder(title.toString())
+            }
+        }
+    }
 
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
         viewModel.refreshReminders()
@@ -119,6 +136,33 @@ fun WearApp(viewModel: MainViewModel) {
                                         onDismiss = { viewModel.dismissReminder(reminder) }
                                     )
                                 }
+                            }
+                        }
+
+                        item {
+                            val enterTitleLabel = stringResource(R.string.enter_reminder_title)
+                            Button(
+                                onClick = {
+                                    val remoteInput = RemoteInput.Builder(inputTextKey)
+                                        .setLabel(enterTitleLabel)
+                                        .build()
+
+                                    val intent = RemoteInputIntentHelper.createActionRemoteInputIntent()
+                                    RemoteInputIntentHelper.putRemoteInputsExtra(intent, listOf(remoteInput))
+
+                                    remoteInputLauncher.launch(intent)
+                                },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .transformedHeight(this, transformationSpec)
+                                    .padding(bottom = 8.dp),
+                                transformation = SurfaceTransformation(transformationSpec),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = MaterialTheme.colorScheme.primaryContainer,
+                                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                                )
+                            ) {
+                                Text(stringResource(R.string.add_quick_reminder))
                             }
                         }
                     }

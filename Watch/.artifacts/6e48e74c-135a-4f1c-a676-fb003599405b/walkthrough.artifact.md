@@ -1,23 +1,21 @@
-# Walkthrough - Cross Out Reminders Instead of Removing
+# Walkthrough - Enter Custom Title for Quick Reminders
 
-I have updated the app so that clicking a reminder marks it as completed and crosses it out, rather than removing it from the list.
+I have implemented the ability to enter a custom title for quick reminders by launching the Wear OS system input interface.
 
 ## Changes
 
-### Data Layer
-- [MODIFY] [Reminder.kt](file:///C:/git/BlueReminder/Watch/app/src/main/java/com/sentes/bluereminder/data/Reminder.kt): Added an `isCompleted` flag to the reminder data model.
-- [MODIFY] [RemindersStateFlow.kt](file:///C:/git/BlueReminder/Watch/app/src/main/java/com/sentes/bluereminder/data/RemindersStateFlow.kt): Added `markAsCompleted(reminderId: String)` to update the local state.
+### Build Configuration
+- [MODIFY] [libs.versions.toml](file:///C:/git/BlueReminder/Watch/gradle/libs.versions.toml): Added `androidx.wear:wear-input` dependency.
+- [MODIFY] [build.gradle.kts](file:///C:/git/BlueReminder/Watch/app/build.gradle.kts): Included the `wear-input` library.
 
 ### UI Logic Layer
-- [MODIFY] [MainViewModel.kt](file:///C:/git/BlueReminder/Watch/app/src/main/java/com/sentes/bluereminder/presentation/MainViewModel.kt): Updated `dismissReminder` to call `markAsCompleted`.
+- [MODIFY] [MainViewModel.kt](file:///C:/git/BlueReminder/Watch/app/src/main/java/com/sentes/bluereminder/presentation/MainViewModel.kt): Updated `addQuickReminder` to accept a custom `title`.
 
 ### UI Layer
 - [MODIFY] [MainActivity.kt](file:///C:/git/BlueReminder/Watch/app/src/main/java/com/sentes/bluereminder/presentation/MainActivity.kt):
-    - Updated `ReminderItem` to display title and time with a strikethrough decoration when completed.
-    - Improved contrast and visibility for completed reminders by increasing alpha and using high-contrast text colors even when disabled.
-
-### Service Layer
-- [MODIFY] [WatchListenerService.kt](file:///C:/git/BlueReminder/Watch/app/src/main/java/com/sentes/bluereminder/service/WatchListenerService.kt): Updated parsing logic to handle the `isCompleted` flag from incoming JSON.
+    - Integrated `RemoteInputIntentHelper` and `rememberLauncherForActivityResult` to handle system text input.
+    - Updated the "Dodaj (+1h)" button to launch the system input dialog before creating the reminder.
+- [MODIFY] [strings.xml](file:///C:/git/BlueReminder/Watch/app/src/main/res/values/strings.xml): Added `enter_reminder_title` for the input dialog prompt.
 
 ## Verification Results
 
@@ -26,5 +24,6 @@ I have updated the app so that clicking a reminder marks it as completed and cro
 
 ## How to Test
 1. Launch the app on your Wear OS device.
-2. Click on a reminder.
-3. Verify that the reminder remains in the list but is now crossed out, dimmed, and its snooze button is disabled.
+2. Click the "Dodaj (+1h)" button.
+3. The system input interface will appear. You can type, use voice, or choose an emoji for the reminder title.
+4. After confirming the input, the reminder will be sent to your phone with the title you provided.

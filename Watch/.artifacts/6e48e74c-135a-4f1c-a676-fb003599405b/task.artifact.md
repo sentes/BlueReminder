@@ -1,6 +1,19 @@
-- `[x]` Add `isCompleted` to `Reminder.kt`
-- `[x]` Update `RemindersStateFlow.kt` (replace `removeReminder` with `markAsCompleted`)
-- `[x]` Update `MainViewModel.kt` to call `markAsCompleted`
-- `[x]` Update `MainActivity.kt` to show strikethrough and dimming
-- `[x]` Update `WatchListenerService.kt` to parse `isCompleted`
+- `[x]` Add `snoozeReminder` to `PhoneService.kt`
+- `[x]` Add `snoozeReminder` to `MainViewModel.kt`
+- `[x]` Update `ReminderItem` in `MainActivity.kt` to include a snooze button
+- `[x]` Verify build
+- `[x]` Add `removeReminder` to `RemindersStateFlow.kt`
+- `[x]` Add `dismissReminder` to `PhoneService.kt`
+- `[x]` Add `dismissReminder` to `MainViewModel.kt`
+- `[x]` Update `MainActivity.kt` to trigger dismissal on click
+- `[x]` Verify build
+- `[x]` Add `addReminder` to `PhoneService.kt`
+- `[x]` Add `addQuickReminder` to `MainViewModel.kt`
+- `[x]` Add string resource to `strings.xml`
+- `[x]` Add "Add (+1h)" button to `MainActivity.kt`
+- `[x]` Verify build
+- `[x]` Add `wear-input` dependency to `libs.versions.toml` and `build.gradle.kts`
+- `[x]` Update `MainViewModel.kt` to accept title in `addQuickReminder`
+- `[x]` Update `MainActivity.kt` to launch system input for quick reminder
+- `[x]` Add `enter_reminder_title` to `strings.xml`
 - `[x]` Verify build

@@ -4,6 +4,7 @@ import android.content.Context
 import com.google.android.gms.wearable.CapabilityClient
 import com.google.android.gms.wearable.Wearable
 import kotlinx.coroutines.tasks.await
+import org.json.JSONObject
 import java.io.InvalidObjectException
 
 class PhoneService(
@@ -51,6 +52,31 @@ class PhoneService(
                 capabilityInfo.nodes.first().id,
                 "/reminder/snooze",
                 reminderId.toByteArray()
+            )
+                .await()
+        return capabilityInfo.nodes.toString() + "/" + result.toString()
+    }
+
+    suspend fun addReminder(title: String, timeMillis: Long): String {
+        val client = Wearable.getMessageClient(context)
+
+        val capabilityInfo = Wearable.getCapabilityClient(context)
+            .getCapability("bluereminder", CapabilityClient.FILTER_REACHABLE).await()
+
+        if (capabilityInfo.nodes.isEmpty()) {
+            throw InvalidObjectException("NoPhoneNodesFound")
+        }
+
+        val json = JSONObject().apply {
+            put("title", title)
+            put("reminderTime", timeMillis)
+        }
+
+        val result =
+            client.sendMessage(
+                capabilityInfo.nodes.first().id,
+                "/reminder/add",
+                json.toString().toByteArray()
             )
                 .await()
         return capabilityInfo.nodes.toString() + "/" + result.toString()

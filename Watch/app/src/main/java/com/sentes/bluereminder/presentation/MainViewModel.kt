@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import java.util.Calendar
 
 class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val phoneService = PhoneService(application)
@@ -47,6 +48,18 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             try {
                 phoneService.dismissReminder(reminder.id)
+            } catch (e: Exception) {
+                // Handle error
+            }
+        }
+    }
+
+    fun addQuickReminder(title: String) {
+        viewModelScope.launch {
+            try {
+                val calendar = Calendar.getInstance()
+                calendar.add(Calendar.HOUR, 1)
+                phoneService.addReminder(title, calendar.timeInMillis)
             } catch (e: Exception) {
                 // Handle error
             }

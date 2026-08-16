@@ -2,4 +2,6 @@
     <string name="app_name">Blue reminder</string>
     <string name="hello_world">Hello, %1$s!</string>
     <string name="today_reminders">Dzisiejsze przypomnienia</string>
+    <string name="add_quick_reminder">Dodaj (+1h)</string>
+    <string name="enter_reminder_title">Wpisz tytuł przypomnienia</string>
 </resources>

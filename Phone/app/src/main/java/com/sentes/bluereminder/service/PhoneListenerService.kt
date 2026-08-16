@@ -6,6 +6,7 @@ import com.google.android.gms.wearable.DataEventBuffer
 import com.google.android.gms.wearable.MessageEvent
 import com.google.android.gms.wearable.Wearable
 import com.google.android.gms.wearable.WearableListenerService
+import com.sentes.bluereminder.data.Reminder
 import com.sentes.bluereminder.data.ReminderDatabase
 import com.sentes.bluereminder.data.ReminderRepository
 import kotlinx.coroutines.*
@@ -30,7 +31,35 @@ class PhoneListenerService : WearableListenerService() {
     override fun onMessageReceived(messageEvent: MessageEvent) {
         Log.d(TAG, "onMessageReceived(): ${messageEvent.path}")
 
-        if (messageEvent.path == "/reminder/snooze") {
+        if (messageEvent.path == "/reminder/add") {
+            serviceScope.launch {
+                try {
+                    val reminderJson = String(messageEvent.data, Charsets.UTF_8)
+                    val reminderObject = JSONObject(reminderJson)
+                    val title = reminderObject.getString("title")
+                    val reminderTime = if (reminderObject.has("reminderTime")) reminderObject.getLong("reminderTime") else null
+                    
+                    val reminder = Reminder(
+                        title = title,
+                        reminderTime = reminderTime
+                    )
+                    repository.insert(reminder)
+                    Log.d(TAG, "Reminder added from wearable: $title")
+
+                    Wearable.getMessageClient(this@PhoneListenerService)
+                        .sendMessage(
+                            messageEvent.sourceNodeId, "/reminder/response_add",
+                            getTodayRemindersResponseText().toByteArray()
+                        )
+                        .addOnSuccessListener { Log.d(TAG, "Reminders sent to wearable") }
+                        .addOnFailureListener { Log.e(TAG, "Reply failed", it) }
+                }
+                catch (e: Exception) {
+                    Log.e(TAG, "Error parsing or inserting reminder JSON", e)
+                }
+            }
+
+        } else if (messageEvent.path == "/reminder/snooze") {
             serviceScope.launch {
                 try {
                     val reminderId = String(messageEvent.data, Charsets.UTF_8).toLongOrNull()
@@ -102,30 +131,10 @@ class PhoneListenerService : WearableListenerService() {
         else if (messageEvent.path == "/reminder/get_today") {
             serviceScope.launch {
                 try {
-                    val endOfDay = LocalDate.now().atTime(LocalTime.MAX)
-                        .atZone(ZoneId.systemDefault())
-                        .toInstant()
-                        .toEpochMilli()
-
-                    val reminders = repository.getTodayUnfinishedReminders(endOfDay)
-                    
-                    val jsonArray = JSONArray()
-                    reminders.forEach { reminder ->
-                        val jsonObject = JSONObject().apply {
-                            put("id", reminder.id)
-                            put("title", reminder.title)
-                            put("description", reminder.description)
-                            put("reminderTime", reminder.reminderTime)
-                        }
-                        jsonArray.put(jsonObject)
-                    }
-                    
-                    val responseText = jsonArray.toString()
-
                     Wearable.getMessageClient(this@PhoneListenerService)
                         .sendMessage(
                             messageEvent.sourceNodeId, "/reminder/response_get_today",
-                            responseText.toByteArray()
+                            getTodayRemindersResponseText().toByteArray()
                         )
                         .addOnSuccessListener { Log.d(TAG, "Reminders sent to wearable") }
                         .addOnFailureListener { Log.e(TAG, "Reply failed", it) }
@@ -134,6 +143,28 @@ class PhoneListenerService : WearableListenerService() {
                 }
             }
         }
+    }
+
+    private suspend fun getTodayRemindersResponseText(): String {
+        val endOfDay = LocalDate.now().atTime(LocalTime.MAX)
+            .atZone(ZoneId.systemDefault())
+            .toInstant()
+            .toEpochMilli()
+
+        val reminders = repository.getTodayUnfinishedReminders(endOfDay)
+
+        val jsonArray = JSONArray()
+        reminders.forEach { reminder ->
+            val jsonObject = JSONObject().apply {
+                put("id", reminder.id)
+                put("title", reminder.title)
+                put("description", reminder.description)
+                put("reminderTime", reminder.reminderTime)
+            }
+            jsonArray.put(jsonObject)
+        }
+
+        return jsonArray.toString()
     }
 
     override fun onDestroy() {
