@@ -39,8 +39,25 @@ class PhoneListenerService : WearableListenerService() {
                         if (reminder != null) {
                             val baseTime = reminder.reminderTime ?: System.currentTimeMillis()
                             val newTime = baseTime + (60 * 60 * 1000) // Add 1 hour
-                            repository.update(reminder.copy(reminderTime = newTime, isCompleted = false))
+                            val updatedReminder = reminder.copy(reminderTime = newTime, isCompleted = false)
+                            repository.update(updatedReminder)
                             Log.d(TAG, "Reminder $reminderId snoozed by 1 hour")
+
+                            // Send updated reminder back to wearable
+                            val jsonObject = JSONObject().apply {
+                                put("id", updatedReminder.id)
+                                put("title", updatedReminder.title)
+                                put("description", updatedReminder.description)
+                                put("reminderTime", updatedReminder.reminderTime)
+                            }
+                            
+                            Wearable.getMessageClient(this@PhoneListenerService)
+                                .sendMessage(
+                                    messageEvent.sourceNodeId, "/reminder/response_snooze",
+                                    jsonObject.toString().toByteArray()
+                                )
+                                .addOnSuccessListener { Log.d(TAG, "Updated reminder sent to wearable") }
+                                .addOnFailureListener { Log.e(TAG, "Failed to send snooze response", it) }
                         }
                     }
                 } catch (e: Exception) {

@@ -4,7 +4,7 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.sentes.bluereminder.data.Reminder
-import com.sentes.bluereminder.data.RemindersRepository
+import com.sentes.bluereminder.data.RemindersStateFlow
 import com.sentes.bluereminder.service.PhoneService
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -14,7 +14,7 @@ import kotlinx.coroutines.launch
 class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val phoneService = PhoneService(application)
     
-    val reminders: StateFlow<List<Reminder>> = RemindersRepository.reminders
+    val reminders: StateFlow<List<Reminder>> = RemindersStateFlow.reminders
 
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
