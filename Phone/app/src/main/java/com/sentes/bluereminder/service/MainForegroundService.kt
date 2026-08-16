@@ -11,6 +11,7 @@ import android.content.Intent
 import android.os.IBinder
 import androidx.core.app.NotificationCompat
 import com.sentes.bluereminder.MainActivity
+import com.sentes.bluereminder.R
 import com.sentes.bluereminder.data.ReminderDatabase
 import com.sentes.bluereminder.data.ReminderRepository
 import kotlinx.coroutines.*
@@ -44,7 +45,7 @@ class MainForegroundService : Service() {
         return NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle("Blue")
             .setContentText("Blue działa")
-            .setSmallIcon(android.R.drawable.ic_menu_info_details)
+            .setSmallIcon(R.drawable.ic_notifi)
             .setPriority(NotificationCompat.PRIORITY_LOW)
             .setOngoing(true)
             .build()
