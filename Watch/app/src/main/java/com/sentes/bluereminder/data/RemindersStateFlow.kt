@@ -28,6 +28,6 @@ object RemindersStateFlow {
         }
 
         // 4. Update the StateFlow with the sorted list
-        _reminders.value = currentList.sortedBy { it.reminderTime }
+        _reminders.value = currentList
     }
 }

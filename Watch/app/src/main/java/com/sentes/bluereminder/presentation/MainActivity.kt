@@ -83,7 +83,7 @@ fun WearApp(viewModel: MainViewModel) {
                                 contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
                             ),
                     ) {
-                        Text("Refresh")
+                        Text("Odśwież")
                     }
                 },
             ) { contentPadding ->
@@ -103,7 +103,7 @@ fun WearApp(viewModel: MainViewModel) {
                             if (reminders.isEmpty()) {
                                 item {
                                     Text(
-                                        text = "No reminders for today",
+                                        text = "Brak przypomnień na dzisiaj",
                                         modifier = Modifier.padding(16.dp),
                                         style = MaterialTheme.typography.bodyMedium
                                     )
