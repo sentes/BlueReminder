@@ -22,12 +22,27 @@ class WatchListenerService : WearableListenerService() {
                 id = jsonObject.getString("id"),
                 title = jsonObject.getString("title"),
                 description = jsonObject.getString("description"),
-                reminderTime = getReminderTime(jsonObject)
+                reminderTime = getReminderTime(jsonObject),
+                isCompleted = jsonObject.optBoolean("isCompleted", false)
             )
 
             RemindersStateFlow.updateSingleReminder(reminder)
             Log.d("WatchListenerService", "Updated reminder: $reminder")
-        } else if (event.path == "/reminder/response_get_today") {
+        }
+        else if (event.path == "/reminder/response_dismiss") {
+            val jsonObject = JSONObject(String(event.data))
+            val reminder = Reminder(
+                id = jsonObject.getString("id"),
+                title = jsonObject.getString("title"),
+                description = jsonObject.getString("description"),
+                reminderTime = getReminderTime(jsonObject),
+                isCompleted = jsonObject.optBoolean("isCompleted", false)
+            )
+
+            RemindersStateFlow.updateSingleReminder(reminder)
+            Log.d("WatchListenerService", "Updated reminder: $reminder")
+        }
+        else if (event.path == "/reminder/response_get_today") {
             try {
                 val jsonArray = JSONArray(String(event.data))
                 val reminders = mutableListOf<Reminder>()
@@ -39,7 +54,8 @@ class WatchListenerService : WearableListenerService() {
                             id = obj.getString("id"),
                             title = obj.getString("title"),
                             description = obj.getString("description"),
-                            reminderTime = getReminderTime(obj)
+                            reminderTime = getReminderTime(obj),
+                            isCompleted = obj.optBoolean("isCompleted", false)
                         )
                     )
                 }

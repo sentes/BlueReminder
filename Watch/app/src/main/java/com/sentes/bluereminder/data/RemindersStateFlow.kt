@@ -3,6 +3,7 @@ package com.sentes.bluereminder.data
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 
 object RemindersStateFlow {
     private val _reminders = MutableStateFlow<List<Reminder>>(emptyList())
@@ -13,21 +14,29 @@ object RemindersStateFlow {
     }
 
     fun updateSingleReminder(updatedReminder: Reminder) {
-        // 1. Get a mutable copy of the current list
-        val currentList = _reminders.value.toMutableList()
-
-        // 2. Find the index of the reminder to update
-        val index = currentList.indexOfFirst { it.id == updatedReminder.id }
-
-        if (index != -1) {
-            // 3a. Update existing reminder
-            currentList[index] = updatedReminder
-        } else {
-            // 3b. Add as new if it doesn't exist (optional behavior)
-            currentList.add(updatedReminder)
+        _reminders.update { current ->
+            val mutableList = current.toMutableList()
+            val index = mutableList.indexOfFirst { it.id == updatedReminder.id }
+            if (index != -1) {
+                mutableList[index] = updatedReminder
+            } else {
+                mutableList.add(updatedReminder)
+            }
+            mutableList.sortedBy { it.reminderTime }
         }
+    }
 
-        // 4. Update the StateFlow with the sorted list
-        _reminders.value = currentList
+    fun markAsCompleted(reminderId: String) {
+        _reminders.update { current ->
+            current.map {
+                if (it.id == reminderId) it.copy(isCompleted = true) else it
+            }
+        }
+    }
+
+    fun removeReminder(reminderId: String) {
+        _reminders.update { current ->
+            current.filterNot { it.id == reminderId }
+        }
     }
 }

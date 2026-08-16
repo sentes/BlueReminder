@@ -17,7 +17,9 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
@@ -113,7 +115,8 @@ fun WearApp(viewModel: MainViewModel) {
                                     ReminderItem(
                                         reminder,
                                         transformationSpec,
-                                        onSnooze = { viewModel.snoozeReminder(reminder) }
+                                        onSnooze = { viewModel.snoozeReminder(reminder) },
+                                        onDismiss = { viewModel.dismissReminder(reminder) }
                                     )
                                 }
                             }
@@ -135,7 +138,8 @@ fun WearApp(viewModel: MainViewModel) {
 fun TransformingLazyColumnItemScope.ReminderItem(
     reminder: Reminder,
     transformationSpec: TransformationSpec,
-    onSnooze: () -> Unit
+    onSnooze: () -> Unit,
+    onDismiss: () -> Unit
 ) {
     val timeFormatter = DateTimeFormatter.ofPattern("HH:mm")
     val isOverdue = reminder.reminderTime.isBefore(LocalDateTime.now())
@@ -144,30 +148,39 @@ fun TransformingLazyColumnItemScope.ReminderItem(
         modifier = Modifier
             .fillMaxWidth()
             .transformedHeight(this, transformationSpec)
-            .padding(vertical = 2.dp),
+            .padding(vertical = 2.dp)
+            .alpha(if (reminder.isCompleted) 0.75f else 1f),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Button(
-            onClick = { /* Handle click if needed */ },
+            onClick = onDismiss,
             modifier = Modifier.weight(1f),
             transformation = SurfaceTransformation(transformationSpec),
-            colors = if (isOverdue) {
-                ButtonDefaults.buttonColors(
+            enabled = !reminder.isCompleted,
+            colors = when {
+                reminder.isCompleted -> ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceContainer,
+                    contentColor = MaterialTheme.colorScheme.onSurface,
+                    disabledContainerColor = MaterialTheme.colorScheme.surfaceContainer,
+                    disabledContentColor = MaterialTheme.colorScheme.onSurface
+                )
+                isOverdue -> ButtonDefaults.buttonColors(
                     containerColor = MaterialTheme.colorScheme.errorContainer,
                     contentColor = MaterialTheme.colorScheme.onErrorContainer
                 )
-            } else {
-                ButtonDefaults.buttonColors()
+                else -> ButtonDefaults.buttonColors()
             }
         ) {
             Column(modifier = Modifier.fillMaxWidth().padding(4.dp)) {
                 Text(
                     text = reminder.title,
-                    style = MaterialTheme.typography.titleMedium
+                    style = MaterialTheme.typography.titleMedium,
+                    textDecoration = if (reminder.isCompleted) TextDecoration.LineThrough else null
                 )
                 Text(
                     text = reminder.reminderTime.format(timeFormatter),
-                    style = MaterialTheme.typography.bodySmall
+                    style = MaterialTheme.typography.bodySmall,
+                    textDecoration = if (reminder.isCompleted) TextDecoration.LineThrough else null
                 )
             }
         }
@@ -178,9 +191,12 @@ fun TransformingLazyColumnItemScope.ReminderItem(
             onClick = onSnooze,
             modifier = Modifier.size(width = 52.dp, height = 52.dp),
             transformation = SurfaceTransformation(transformationSpec),
+            enabled = !reminder.isCompleted,
             colors = ButtonDefaults.buttonColors(
                 containerColor = MaterialTheme.colorScheme.tertiaryContainer,
-                contentColor = MaterialTheme.colorScheme.onTertiaryContainer
+                contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
+                disabledContainerColor = MaterialTheme.colorScheme.surfaceContainer,
+                disabledContentColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
             )
         ) {
             Text("+1h", style = MaterialTheme.typography.labelSmall)

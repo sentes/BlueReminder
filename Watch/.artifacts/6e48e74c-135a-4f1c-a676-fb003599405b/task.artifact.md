@@ -1,4 +1,6 @@
-- `[x]` Add `snoozeReminder` to `PhoneService.kt`
-- `[x]` Add `snoozeReminder` to `MainViewModel.kt`
-- `[x]` Update `ReminderItem` in `MainActivity.kt` to include a snooze button
+- `[x]` Add `isCompleted` to `Reminder.kt`
+- `[x]` Update `RemindersStateFlow.kt` (replace `removeReminder` with `markAsCompleted`)
+- `[x]` Update `MainViewModel.kt` to call `markAsCompleted`
+- `[x]` Update `MainActivity.kt` to show strikethrough and dimming
+- `[x]` Update `WatchListenerService.kt` to parse `isCompleted`
 - `[x]` Verify build

@@ -64,7 +64,42 @@ class PhoneListenerService : WearableListenerService() {
                     Log.e(TAG, "Error snoozing reminder", e)
                 }
             }
-        } else if (messageEvent.path == "/reminder/get_today") {
+        }
+        else if (messageEvent.path == "/reminder/dismiss") {
+            serviceScope.launch {
+                try {
+                    val reminderId = String(messageEvent.data, Charsets.UTF_8).toLongOrNull()
+                    if (reminderId != null) {
+                        val reminder = repository.getReminderById(reminderId)
+                        if (reminder != null) {
+                            val updatedReminder = reminder.copy(isCompleted = true)
+                            repository.update(updatedReminder)
+                            Log.d(TAG, "Reminder $reminderId completed")
+
+
+                            val jsonObject = JSONObject().apply {
+                                put("id", updatedReminder.id)
+                                put("title", updatedReminder.title)
+                                put("description", updatedReminder.description)
+                                put("reminderTime", updatedReminder.reminderTime)
+                                put("isCompleted", true)
+                            }
+
+                            Wearable.getMessageClient(this@PhoneListenerService)
+                                .sendMessage(
+                                    messageEvent.sourceNodeId, "/reminder/response_dismiss",
+                                    jsonObject.toString().toByteArray()
+                                )
+                                .addOnSuccessListener { Log.d(TAG, "Updated reminder sent to wearable") }
+                                .addOnFailureListener { Log.e(TAG, "Failed to send snooze response", it) }
+                        }
+                    }
+                } catch (e: Exception) {
+                    Log.e(TAG, "Error snoozing reminder", e)
+                }
+            }
+        }
+        else if (messageEvent.path == "/reminder/get_today") {
             serviceScope.launch {
                 try {
                     val endOfDay = LocalDate.now().atTime(LocalTime.MAX)

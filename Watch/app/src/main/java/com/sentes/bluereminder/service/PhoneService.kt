@@ -55,4 +55,24 @@ class PhoneService(
                 .await()
         return capabilityInfo.nodes.toString() + "/" + result.toString()
     }
+
+    suspend fun dismissReminder(reminderId: String): String {
+        val client = Wearable.getMessageClient(context)
+
+        val capabilityInfo = Wearable.getCapabilityClient(context)
+            .getCapability("bluereminder", CapabilityClient.FILTER_REACHABLE).await()
+
+        if (capabilityInfo.nodes.isEmpty()) {
+            throw InvalidObjectException("NoPhoneNodesFound")
+        }
+
+        val result =
+            client.sendMessage(
+                capabilityInfo.nodes.first().id,
+                "/reminder/dismiss",
+                reminderId.toByteArray()
+            )
+                .await()
+        return capabilityInfo.nodes.toString() + "/" + result.toString()
+    }
 }
