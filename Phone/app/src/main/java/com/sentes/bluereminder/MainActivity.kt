@@ -5,6 +5,7 @@ import android.content.pm.PackageManager
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
@@ -23,6 +24,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
@@ -108,8 +110,30 @@ private fun getReminderGroup(reminderTime: Long?): ReminderGroup {
 @OptIn(ExperimentalMaterial3Api::class, androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
 fun ReminderApp(viewModel: ReminderViewModel = viewModel()) {
+    val context = LocalContext.current
     var currentScreen by remember { mutableStateOf<Screen>(Screen.List) }
     var selectedTab by remember { mutableStateOf(MainTab.Reminders) }
+
+    val exportLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.CreateDocument("application/json")
+    ) { uri ->
+        uri?.let {
+            context.contentResolver.openOutputStream(it)?.use { outputStream ->
+                outputStream.write(viewModel.getRemindersJson().toByteArray())
+            }
+        }
+    }
+
+    val importLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument()
+    ) { uri ->
+        uri?.let {
+            context.contentResolver.openInputStream(it)?.use { inputStream ->
+                val jsonString = inputStream.bufferedReader().use { reader -> reader.readText() }
+                viewModel.importRemindersFromJson(jsonString)
+            }
+        }
+    }
 
     val reminders by viewModel.reminders.collectAsState()
 
@@ -123,7 +147,9 @@ fun ReminderApp(viewModel: ReminderViewModel = viewModel()) {
                 onEditReminder = { currentScreen = Screen.Editor(it) },
                 onToggleReminder = { viewModel.toggleReminderCompletion(it) },
                 onDeleteReminder = { viewModel.deleteReminder(it) },
-                onPostponeReminder = { viewModel.postponeReminder(it) }
+                onPostponeReminder = { viewModel.postponeReminder(it) },
+                onExportJson = { exportLauncher.launch("reminders_backup.json") },
+                onImportJson = { importLauncher.launch(arrayOf("application/json")) }
             )
         }
         is Screen.Editor -> {
@@ -156,12 +182,42 @@ fun MainScreen(
     onEditReminder: (Reminder) -> Unit,
     onToggleReminder: (Reminder) -> Unit,
     onDeleteReminder: (Reminder) -> Unit,
-    onPostponeReminder: (Reminder) -> Unit
+    onPostponeReminder: (Reminder) -> Unit,
+    onExportJson: () -> Unit,
+    onImportJson: () -> Unit
 ) {
+    var showMenu by remember { mutableStateOf(false) }
+
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         topBar = {
-            TopAppBar(title = { Text(selectedTab.title) })
+            TopAppBar(
+                title = { Text(selectedTab.title) },
+                actions = {
+                    IconButton(onClick = { showMenu = true }) {
+                        Icon(Icons.Default.MoreVert, contentDescription = "Menu")
+                    }
+                    DropdownMenu(
+                        expanded = showMenu,
+                        onDismissRequest = { showMenu = false }
+                    ) {
+                        DropdownMenuItem(
+                            text = { Text("Eksportuj do JSON") },
+                            onClick = {
+                                showMenu = false
+                                onExportJson()
+                            }
+                        )
+                        DropdownMenuItem(
+                            text = { Text("Importuj z JSON") },
+                            onClick = {
+                                showMenu = false
+                                onImportJson()
+                            }
+                        )
+                    }
+                }
+            )
         },
         bottomBar = {
             NavigationBar {

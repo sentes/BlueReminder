@@ -10,6 +10,8 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import org.json.JSONArray
+import org.json.JSONObject
 
 class ReminderViewModel(application: Application) : AndroidViewModel(application) {
     private val repository: ReminderRepository
@@ -56,6 +58,43 @@ class ReminderViewModel(application: Application) : AndroidViewModel(application
             val baseTime = reminder.reminderTime ?: System.currentTimeMillis()
             val newTime = baseTime + (60 * 60 * 1000) // Add 1 hour
             repository.update(reminder.copy(reminderTime = newTime, isCompleted = false))
+        }
+    }
+
+    fun getRemindersJson(): String {
+        val currentReminders = reminders.value
+        val jsonArray = JSONArray()
+        currentReminders.forEach { reminder ->
+            val jsonObject = JSONObject().apply {
+                put("title", reminder.title)
+                put("description", reminder.description)
+                put("isCompleted", reminder.isCompleted)
+                put("reminderTime", reminder.reminderTime ?: JSONObject.NULL)
+                put("eventTime", reminder.eventTime ?: JSONObject.NULL)
+            }
+            jsonArray.put(jsonObject)
+        }
+        return jsonArray.toString(4)
+    }
+
+    fun importRemindersFromJson(jsonString: String) {
+        viewModelScope.launch {
+            try {
+                val jsonArray = JSONArray(jsonString)
+                for (i in 0 until jsonArray.length()) {
+                    val jsonObject = jsonArray.getJSONObject(i)
+                    val reminder = Reminder(
+                        title = jsonObject.getString("title"),
+                        description = jsonObject.optString("description", ""),
+                        isCompleted = jsonObject.optBoolean("isCompleted", false),
+                        reminderTime = if (jsonObject.isNull("reminderTime")) null else jsonObject.getLong("reminderTime"),
+                        eventTime = if (jsonObject.isNull("eventTime")) null else jsonObject.getLong("eventTime")
+                    )
+                    repository.insert(reminder)
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
         }
     }
 }
