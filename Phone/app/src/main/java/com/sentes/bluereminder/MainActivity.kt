@@ -19,6 +19,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -84,6 +85,11 @@ sealed class Screen {
     data class Editor(val reminder: Reminder? = null) : Screen()
 }
 
+enum class MainTab(val title: String, val icon: androidx.compose.ui.graphics.vector.ImageVector) {
+    Reminders("Powiadomienia", Icons.Default.Notifications),
+    Calendar("Kalendarz", Icons.Default.Edit)
+}
+
 private fun getReminderGroup(reminderTime: Long?): ReminderGroup {
     if (reminderTime == null) return ReminderGroup.Later
     
@@ -104,18 +110,16 @@ private fun getReminderGroup(reminderTime: Long?): ReminderGroup {
 @Composable
 fun ReminderApp(viewModel: ReminderViewModel = viewModel()) {
     var currentScreen by remember { mutableStateOf<Screen>(Screen.List) }
+    var selectedTab by remember { mutableStateOf(MainTab.Reminders) }
 
     val reminders by viewModel.reminders.collectAsState()
 
-    val groupedReminders = remember(reminders) {
-        reminders.groupBy { getReminderGroup(it.reminderTime) }
-            .toSortedMap(compareBy { it.ordinal })
-    }
-
     when (val screen = currentScreen) {
         is Screen.List -> {
-            ReminderListScreen(
-                groupedReminders = groupedReminders,
+            MainScreen(
+                reminders = reminders,
+                selectedTab = selectedTab,
+                onTabSelected = { selectedTab = it },
                 onAddReminder = { currentScreen = Screen.Editor() },
                 onEditReminder = { currentScreen = Screen.Editor(it) },
                 onToggleReminder = { viewModel.toggleReminderCompletion(it) },
@@ -145,8 +149,10 @@ fun ReminderApp(viewModel: ReminderViewModel = viewModel()) {
 
 @OptIn(ExperimentalMaterial3Api::class, androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
-fun ReminderListScreen(
-    groupedReminders: Map<ReminderGroup, List<Reminder>>,
+fun MainScreen(
+    reminders: List<Reminder>,
+    selectedTab: MainTab,
+    onTabSelected: (MainTab) -> Unit,
     onAddReminder: () -> Unit,
     onEditReminder: (Reminder) -> Unit,
     onToggleReminder: (Reminder) -> Unit,
@@ -156,7 +162,19 @@ fun ReminderListScreen(
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         topBar = {
-            TopAppBar(title = { Text("Powiadomienia") })
+            TopAppBar(title = { Text(selectedTab.title) })
+        },
+        bottomBar = {
+            NavigationBar {
+                MainTab.entries.forEach { tab ->
+                    NavigationBarItem(
+                        selected = selectedTab == tab,
+                        onClick = { onTabSelected(tab) },
+                        label = { Text(tab.title) },
+                        icon = { Icon(tab.icon, contentDescription = tab.title) }
+                    )
+                }
+            }
         },
         floatingActionButton = {
             FloatingActionButton(onClick = onAddReminder) {
@@ -164,37 +182,129 @@ fun ReminderListScreen(
             }
         }
     ) { innerPadding ->
-        Column(modifier = Modifier.padding(innerPadding)) {
-            if (groupedReminders.isEmpty()) {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text("Brak powiadomień")
-                }
-            } else {
-                LazyColumn {
-                    groupedReminders.forEach { (group, remindersInGroup) ->
-                        stickyHeader {
-                            Surface(
-                                modifier = Modifier.fillMaxWidth(),
-                                color = MaterialTheme.colorScheme.surfaceVariant
-                            ) {
-                                Text(
-                                    text = group.title,
-                                    style = MaterialTheme.typography.titleSmall,
-                                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                        }
-                        items(remindersInGroup, key = { it.id }) { reminder ->
-                            ReminderItem(
-                                reminder = reminder,
-                                onToggle = { onToggleReminder(reminder) },
-                                onEdit = { onEditReminder(reminder) },
-                                onDelete = { onDeleteReminder(reminder) },
-                                onPostpone = { onPostponeReminder(reminder) }
-                            )
-                        }
+        Box(modifier = Modifier.padding(innerPadding)) {
+            when (selectedTab) {
+                MainTab.Reminders -> {
+                    val groupedReminders = remember(reminders) {
+                        reminders.groupBy { getReminderGroup(it.reminderTime) }
+                            .toSortedMap(compareBy { it.ordinal })
                     }
+                    ReminderListContent(
+                        groupedReminders = groupedReminders,
+                        onToggleReminder = onToggleReminder,
+                        onEditReminder = onEditReminder,
+                        onDeleteReminder = onDeleteReminder,
+                        onPostponeReminder = onPostponeReminder
+                    )
+                }
+                MainTab.Calendar -> {
+                    val calendarReminders = remember(reminders) {
+                        reminders.filter { it.eventTime != null }
+                            .sortedBy { it.eventTime }
+                    }
+                    ReminderCalendarContent(
+                        reminders = calendarReminders,
+                        onToggleReminder = onToggleReminder,
+                        onEditReminder = onEditReminder,
+                        onDeleteReminder = onDeleteReminder,
+                        onPostponeReminder = onPostponeReminder
+                    )
+                }
+            }
+        }
+    }
+}
+
+@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
+@Composable
+fun ReminderListContent(
+    groupedReminders: Map<ReminderGroup, List<Reminder>>,
+    onToggleReminder: (Reminder) -> Unit,
+    onEditReminder: (Reminder) -> Unit,
+    onDeleteReminder: (Reminder) -> Unit,
+    onPostponeReminder: (Reminder) -> Unit
+) {
+    if (groupedReminders.isEmpty()) {
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            Text("Brak powiadomień")
+        }
+    } else {
+        LazyColumn(modifier = Modifier.fillMaxSize()) {
+            groupedReminders.forEach { (group, remindersInGroup) ->
+                stickyHeader {
+                    Surface(
+                        modifier = Modifier.fillMaxWidth(),
+                        color = MaterialTheme.colorScheme.surfaceVariant
+                    ) {
+                        Text(
+                            text = group.title,
+                            style = MaterialTheme.typography.titleSmall,
+                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+                items(remindersInGroup, key = { it.id }) { reminder ->
+                    ReminderItem(
+                        reminder = reminder,
+                        onToggle = { onToggleReminder(reminder) },
+                        onEdit = { onEditReminder(reminder) },
+                        onDelete = { onDeleteReminder(reminder) },
+                        onPostpone = { onPostponeReminder(reminder) }
+                    )
+                }
+            }
+        }
+    }
+}
+
+@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
+@Composable
+fun ReminderCalendarContent(
+    reminders: List<Reminder>,
+    onToggleReminder: (Reminder) -> Unit,
+    onEditReminder: (Reminder) -> Unit,
+    onDeleteReminder: (Reminder) -> Unit,
+    onPostponeReminder: (Reminder) -> Unit
+) {
+    if (reminders.isEmpty()) {
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            Text("Brak wydarzeń w kalendarzu")
+        }
+    } else {
+        val groupedByDate = remember(reminders) {
+            reminders.groupBy {
+                Instant.ofEpochMilli(it.eventTime!!)
+                    .atZone(ZoneId.systemDefault())
+                    .toLocalDate()
+            }
+        }
+
+        LazyColumn(modifier = Modifier.fillMaxSize()) {
+            groupedByDate.forEach { (date, remindersOnDate) ->
+                stickyHeader {
+                    Surface(
+                        modifier = Modifier.fillMaxWidth(),
+                        color = MaterialTheme.colorScheme.surfaceVariant
+                    ) {
+                        Text(
+                            text = SimpleDateFormat("dd MMMM yyyy", Locale.getDefault()).format(
+                                Date.from(date.atStartOfDay(ZoneId.systemDefault()).toInstant())
+                            ),
+                            style = MaterialTheme.typography.titleSmall,
+                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+                items(remindersOnDate, key = { it.id }) { reminder ->
+                    ReminderItem(
+                        reminder = reminder,
+                        onToggle = { onToggleReminder(reminder) },
+                        onEdit = { onEditReminder(reminder) },
+                        onDelete = { onDeleteReminder(reminder) },
+                        onPostpone = { onPostponeReminder(reminder) }
+                    )
                 }
             }
         }
