@@ -16,19 +16,15 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val phoneService = PhoneService(application)
     
     val reminders: StateFlow<List<Reminder>> = RemindersStateFlow.reminders
-
-    private val _isLoading = MutableStateFlow(true)
-    val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
+    val isLoading = RemindersStateFlow.isLoading
 
     fun refreshReminders() {
         viewModelScope.launch {
-            _isLoading.value = true
+            RemindersStateFlow.updateIsLoading(true)
             try {
                 phoneService.askForTodayReminders()
             } catch (e: Exception) {
                 // Handle error (e.g., log it or show a toast)
-            } finally {
-                _isLoading.value = false
             }
         }
     }

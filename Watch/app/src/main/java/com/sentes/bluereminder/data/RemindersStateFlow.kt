@@ -9,6 +9,12 @@ import java.time.LocalDate
 object RemindersStateFlow {
     private val _reminders = MutableStateFlow<List<Reminder>>(emptyList())
     val reminders: StateFlow<List<Reminder>> = _reminders.asStateFlow()
+    private val _isLoading = MutableStateFlow(true)
+    val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
+
+    fun updateIsLoading(newIsLoading: Boolean) {
+        _isLoading.value = newIsLoading
+    }
 
     fun updateReminders(newList: List<Reminder>) {
         _reminders.value = newList.sortedBy { it.reminderTime }

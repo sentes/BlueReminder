@@ -62,6 +62,7 @@ class WatchListenerService : WearableListenerService() {
                     )
                 }
                 RemindersStateFlow.updateReminders(reminders)
+                RemindersStateFlow.updateIsLoading(false)
                 Log.d("WatchListenerService", "Updated ${reminders.size} reminders")
             } catch (e: JSONException) {
                 Log.e("WatchListenerService", "Failed to parse reminders", e)
