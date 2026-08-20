@@ -405,7 +405,19 @@ fun ReminderItem(
                 Column(modifier = Modifier.padding(top = 4.dp)) {
                     reminder.eventTime?.let { time ->
                         val dateStr = remember(time) {
-                            SimpleDateFormat("dd MMM, yyyy HH:mm", Locale.getDefault()).format(Date(time))
+                            val eventDate = Instant.ofEpochMilli(time)
+                                .atZone(ZoneId.systemDefault())
+                                .toLocalDate()
+                            val today = LocalDate.now()
+                            val tomorrow = today.plusDays(1)
+                            
+                            val timeStr = SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date(time))
+                            
+                            when {
+                                eventDate.isEqual(today) -> "Dziś $timeStr"
+                                eventDate.isEqual(tomorrow) -> "Jutro $timeStr"
+                                else -> SimpleDateFormat("dd MMM, yyyy HH:mm", Locale.getDefault()).format(Date(time))
+                            }
                         }
                         Text(
                             text = "Termin: $dateStr",
@@ -416,10 +428,23 @@ fun ReminderItem(
 
                     reminder.reminderTime?.let { time ->
                         val dateStr = remember(time) {
-                            SimpleDateFormat("dd MMM, yyyy HH:mm", Locale.getDefault()).format(Date(time))
+                            val reminderDate = Instant.ofEpochMilli(time)
+                                .atZone(ZoneId.systemDefault())
+                                .toLocalDate()
+                            val today = LocalDate.now()
+                            val tomorrow = today.plusDays(1)
+                            
+                            val timeStr = SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date(time))
+                            
+                            when {
+                                reminderDate.isEqual(today) -> "Dziś $timeStr"
+                                reminderDate.isEqual(tomorrow) -> "Jutro $timeStr"
+                                else -> SimpleDateFormat("dd MMM, yyyy HH:mm", Locale.getDefault()).format(Date(time))
+                            }
                         }
+                        
                         Text(
-                            text = "Powiadomienie: $dateStr",
+                            text = dateStr,
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.primary
                         )
@@ -641,49 +666,6 @@ fun ReminderEditorScreen(
             )
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Event Time Section
-            Text("Termin wydarzenia", style = MaterialTheme.typography.titleMedium)
-            Spacer(modifier = Modifier.height(8.dp))
-            DateTimeCard(
-                date = eventDate,
-                hour = eventHour,
-                minute = eventMinute,
-                hasTime = hasEventTime,
-                onDateClick = { 
-                    focusManager.clearFocus()
-                    showEventDatePicker = true 
-                },
-                onTimeClick = { 
-                    focusManager.clearFocus()
-                    showEventTimePicker = true 
-                },
-                onClearClick = {
-                    focusManager.clearFocus()
-                    eventDate = null
-                    hasEventTime = false
-                },
-                onSnoozeClick = { duration ->
-                    focusManager.clearFocus()
-                    val cal = Calendar.getInstance().apply {
-                        timeInMillis = eventDate ?: System.currentTimeMillis()
-                        set(Calendar.HOUR_OF_DAY, eventHour)
-                        set(Calendar.MINUTE, eventMinute)
-                        add(Calendar.MILLISECOND, duration.toInt())
-                    }
-                    eventHour = cal.get(Calendar.HOUR_OF_DAY)
-                    eventMinute = cal.get(Calendar.MINUTE)
-                    eventDate = cal.apply {
-                        set(Calendar.HOUR_OF_DAY, 0)
-                        set(Calendar.MINUTE, 0)
-                        set(Calendar.SECOND, 0)
-                        set(Calendar.MILLISECOND, 0)
-                    }.timeInMillis
-                    hasEventTime = true
-                }
-            )
-
-            Spacer(modifier = Modifier.height(24.dp))
-
             // Reminder Time Section
             Text("Powiadomienie", style = MaterialTheme.typography.titleMedium)
             Spacer(modifier = Modifier.height(8.dp))
@@ -692,13 +674,13 @@ fun ReminderEditorScreen(
                 hour = reminderHour,
                 minute = reminderMinute,
                 hasTime = hasReminderTime,
-                onDateClick = { 
+                onDateClick = {
                     focusManager.clearFocus()
-                    showReminderDatePicker = true 
+                    showReminderDatePicker = true
                 },
-                onTimeClick = { 
+                onTimeClick = {
                     focusManager.clearFocus()
-                    showReminderTimePicker = true 
+                    showReminderTimePicker = true
                 },
                 onClearClick = {
                     focusManager.clearFocus()
@@ -722,6 +704,49 @@ fun ReminderEditorScreen(
                         set(Calendar.MILLISECOND, 0)
                     }.timeInMillis
                     hasReminderTime = true
+                }
+            )
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // Event Time Section
+            Text("Termin wydarzenia", style = MaterialTheme.typography.titleMedium)
+            Spacer(modifier = Modifier.height(8.dp))
+            DateTimeCard(
+                date = eventDate,
+                hour = eventHour,
+                minute = eventMinute,
+                hasTime = hasEventTime,
+                onDateClick = {
+                    focusManager.clearFocus()
+                    showEventDatePicker = true
+                },
+                onTimeClick = {
+                    focusManager.clearFocus()
+                    showEventTimePicker = true
+                },
+                onClearClick = {
+                    focusManager.clearFocus()
+                    eventDate = null
+                    hasEventTime = false
+                },
+                onSnoozeClick = { duration ->
+                    focusManager.clearFocus()
+                    val cal = Calendar.getInstance().apply {
+                        timeInMillis = eventDate ?: System.currentTimeMillis()
+                        set(Calendar.HOUR_OF_DAY, eventHour)
+                        set(Calendar.MINUTE, eventMinute)
+                        add(Calendar.MILLISECOND, duration.toInt())
+                    }
+                    eventHour = cal.get(Calendar.HOUR_OF_DAY)
+                    eventMinute = cal.get(Calendar.MINUTE)
+                    eventDate = cal.apply {
+                        set(Calendar.HOUR_OF_DAY, 0)
+                        set(Calendar.MINUTE, 0)
+                        set(Calendar.SECOND, 0)
+                        set(Calendar.MILLISECOND, 0)
+                    }.timeInMillis
+                    hasEventTime = true
                 }
             )
         }
