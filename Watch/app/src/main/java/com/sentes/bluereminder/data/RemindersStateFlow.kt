@@ -26,14 +26,6 @@ object RemindersStateFlow {
         }
     }
 
-    fun markAsCompleted(reminderId: String) {
-        _reminders.update { current ->
-            current.map {
-                if (it.id == reminderId) it.copy(isCompleted = true) else it
-            }
-        }
-    }
-
     fun removeReminder(reminderId: String) {
         _reminders.update { current ->
             current.filterNot { it.id == reminderId }

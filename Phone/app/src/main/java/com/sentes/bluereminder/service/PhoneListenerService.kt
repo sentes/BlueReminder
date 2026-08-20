@@ -95,14 +95,14 @@ class PhoneListenerService : WearableListenerService() {
                 }
             }
         }
-        else if (messageEvent.path == "/reminder/dismiss") {
+        else if (messageEvent.path == "/reminder/toggle_dismiss") {
             serviceScope.launch {
                 try {
                     val reminderId = String(messageEvent.data, Charsets.UTF_8).toLongOrNull()
                     if (reminderId != null) {
                         val reminder = repository.getReminderById(reminderId)
                         if (reminder != null) {
-                            val updatedReminder = reminder.copy(isCompleted = true)
+                            val updatedReminder = reminder.copy(isCompleted = !reminder.isCompleted)
                             repository.update(updatedReminder)
                             Log.d(TAG, "Reminder $reminderId completed")
 
@@ -113,12 +113,12 @@ class PhoneListenerService : WearableListenerService() {
                                 put("description", updatedReminder.description)
                                 put("reminderTime", updatedReminder.reminderTime)
                                 put("eventTime", updatedReminder.eventTime)
-                                put("isCompleted", true)
+                                put("isCompleted", updatedReminder.isCompleted)
                             }
 
                             Wearable.getMessageClient(this@PhoneListenerService)
                                 .sendMessage(
-                                    messageEvent.sourceNodeId, "/reminder/response_dismiss",
+                                    messageEvent.sourceNodeId, "/reminder/response_toggle_dismiss",
                                     jsonObject.toString().toByteArray()
                                 )
                                 .addOnSuccessListener { Log.d(TAG, "Updated reminder sent to wearable") }

@@ -82,7 +82,7 @@ class PhoneService(
         return capabilityInfo.nodes.toString() + "/" + result.toString()
     }
 
-    suspend fun dismissReminder(reminderId: String): String {
+    suspend fun toggleDismissReminder(reminderId: String): String {
         val client = Wearable.getMessageClient(context)
 
         val capabilityInfo = Wearable.getCapabilityClient(context)
@@ -95,7 +95,7 @@ class PhoneService(
         val result =
             client.sendMessage(
                 capabilityInfo.nodes.first().id,
-                "/reminder/dismiss",
+                "/reminder/toggle_dismiss",
                 reminderId.toByteArray()
             )
                 .await()

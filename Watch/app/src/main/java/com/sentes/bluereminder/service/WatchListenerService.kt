@@ -29,7 +29,7 @@ class WatchListenerService : WearableListenerService() {
 
             RemindersStateFlow.updateSingleReminder(reminder)
             Log.d("WatchListenerService", "Updated reminder: $reminder")
-        } else if (event.path == "/reminder/response_dismiss") {
+        } else if (event.path == "/reminder/response_toggle_dismiss") {
             val jsonObject = JSONObject(String(event.data))
             val reminder = Reminder(
                 id = jsonObject.getString("id"),

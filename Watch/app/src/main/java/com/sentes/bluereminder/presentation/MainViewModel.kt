@@ -43,11 +43,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    fun dismissReminder(reminder: Reminder) {
-        RemindersStateFlow.markAsCompleted(reminder.id)
+    fun toggleDismissReminder(reminder: Reminder) {
         viewModelScope.launch {
             try {
-                phoneService.dismissReminder(reminder.id)
+                phoneService.toggleDismissReminder(reminder.id)
             } catch (e: Exception) {
                 // Handle error
             }
