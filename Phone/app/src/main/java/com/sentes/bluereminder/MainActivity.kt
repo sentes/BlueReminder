@@ -8,6 +8,7 @@ import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -15,16 +16,14 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
@@ -393,6 +392,7 @@ fun ReminderEditorScreen(
     onDismiss: () -> Unit,
     onConfirm: (String, String, Long?, Long?) -> Unit
 ) {
+    val focusManager = LocalFocusManager.current
     // Event Time States
     val eventCalendar = remember(reminder) {
         Calendar.getInstance().apply {
@@ -525,9 +525,14 @@ fun ReminderEditorScreen(
         Column(
             modifier = Modifier
                 .padding(innerPadding)
-                .padding(16.dp)
                 .fillMaxSize()
+                .pointerInput(Unit) {
+                    detectTapGestures(onTap = {
+                        focusManager.clearFocus()
+                    })
+                }
                 .verticalScroll(rememberScrollState())
+                .padding(16.dp)
         ) {
             TextField(
                 value = title,
@@ -553,13 +558,21 @@ fun ReminderEditorScreen(
                 hour = eventHour,
                 minute = eventMinute,
                 hasTime = hasEventTime,
-                onDateClick = { showEventDatePicker = true },
-                onTimeClick = { showEventTimePicker = true },
+                onDateClick = { 
+                    focusManager.clearFocus()
+                    showEventDatePicker = true 
+                },
+                onTimeClick = { 
+                    focusManager.clearFocus()
+                    showEventTimePicker = true 
+                },
                 onClearClick = {
+                    focusManager.clearFocus()
                     eventDate = null
                     hasEventTime = false
                 },
                 onPlusHourClick = {
+                    focusManager.clearFocus()
                     val cal = Calendar.getInstance().apply {
                         timeInMillis = eventDate ?: System.currentTimeMillis()
                         set(Calendar.HOUR_OF_DAY, eventHour)
@@ -588,13 +601,21 @@ fun ReminderEditorScreen(
                 hour = reminderHour,
                 minute = reminderMinute,
                 hasTime = hasReminderTime,
-                onDateClick = { showReminderDatePicker = true },
-                onTimeClick = { showReminderTimePicker = true },
+                onDateClick = { 
+                    focusManager.clearFocus()
+                    showReminderDatePicker = true 
+                },
+                onTimeClick = { 
+                    focusManager.clearFocus()
+                    showReminderTimePicker = true 
+                },
                 onClearClick = {
+                    focusManager.clearFocus()
                     reminderDate = null
                     hasReminderTime = false
                 },
                 onPlusHourClick = {
+                    focusManager.clearFocus()
                     val cal = Calendar.getInstance().apply {
                         timeInMillis = reminderDate ?: System.currentTimeMillis()
                         set(Calendar.HOUR_OF_DAY, reminderHour)
