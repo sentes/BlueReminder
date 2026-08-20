@@ -1,16 +1,87 @@
-<?xml version="1.0" encoding="utf-8"?>
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
-    android:width="24dp"
-    android:height="24dp"
-    android:viewportWidth="24"
-    android:viewportHeight="24">
-    <path
-        android:fillColor="#2563EB"
-        android:pathData="M12,3.2c-2.1,0 -3.8,1.7 -3.8,3.8v3.1l-1.3,2.2c-0.2,0.3 0.1,0.7 0.5,0.7h9.2c0.4,0 0.7,-0.4 0.5,-0.7l-1.3,-2.2V7c0,-2.1 -1.7,-3.8 -3.8,-3.8z"/>
-    <path
-        android:fillColor="#1D4ED8"
-        android:pathData="M10.4,13c0,1.1 0.7,2 1.6,2s1.6,-0.9 1.6,-2z"/>
-    <path
-        android:fillColor="#1D4ED8"
-        android:pathData="M12,2a1,1 0,1 0,0.001 0z"/>
+    android:width="240dp"
+    android:height="240dp"
+    android:viewportWidth="680"
+    android:viewportHeight="680">
+
+    <!-- content scaled to 65% and centered so it sits inside the circular splash mask -->
+    <group
+        android:pivotX="340"
+        android:pivotY="340"
+        android:scaleX="0.65"
+        android:scaleY="0.65">
+
+        <!-- calendar rings -->
+        <path
+            android:fillColor="#2563EB"
+            android:pathData="M150,90 L170,90 Q190,90 190,110 L190,160 Q190,180 170,180 L150,180 Q130,180 130,160 L130,110 Q130,90 150,90 Z"/>
+        <path
+            android:fillColor="#2563EB"
+            android:pathData="M380,90 L400,90 Q420,90 420,110 L420,160 Q420,180 400,180 L380,180 Q360,180 360,160 L360,110 Q360,90 380,90 Z"/>
+
+        <!-- calendar body -->
+        <path
+            android:fillColor="#3B82F6"
+            android:pathData="M148,150 L422,150 Q450,150 450,178 L450,502 Q450,530 422,530 L148,530 Q120,530 120,502 L120,178 Q120,150 148,150 Z"/>
+
+        <!-- ring holes -->
+        <path
+            android:fillColor="#1E40AF"
+            android:pathData="M160,150m-18,0a18,18 0,1 1,36 0a18,18 0,1 1,-36 0"/>
+        <path
+            android:fillColor="#1E40AF"
+            android:pathData="M390,150m-18,0a18,18 0,1 1,36 0a18,18 0,1 1,-36 0"/>
+
+        <!-- calendar grid background -->
+        <path
+            android:fillColor="#F8FAFC"
+            android:pathData="M154,230 L416,230 Q430,230 430,244 L430,486 Q430,500 416,500 L154,500 Q140,500 140,486 L140,244 Q140,230 154,230 Z"/>
+
+        <!-- grid cells row 1 -->
+        <path android:fillColor="#DBEAFE" android:pathData="M168,260 L212,260 Q220,260 220,268 L220,307 Q220,315 212,315 L168,315 Q160,315 160,307 L160,268 Q160,260 168,260 Z"/>
+        <path android:fillColor="#DBEAFE" android:pathData="M248,260 L292,260 Q300,260 300,268 L300,307 Q300,315 292,315 L248,315 Q240,315 240,307 L240,268 Q240,260 248,260 Z"/>
+        <path android:fillColor="#DBEAFE" android:pathData="M328,260 L372,260 Q380,260 380,268 L380,307 Q380,315 372,315 L328,315 Q320,315 320,307 L320,268 Q320,260 328,260 Z"/>
+
+        <!-- grid cells row 2 -->
+        <path android:fillColor="#DBEAFE" android:pathData="M168,335 L212,335 Q220,335 220,343 L220,382 Q220,390 212,390 L168,390 Q160,390 160,382 L160,343 Q160,335 168,335 Z"/>
+        <!-- checked date cell -->
+        <path android:fillColor="#2563EB" android:pathData="M248,335 L292,335 Q300,335 300,343 L300,382 Q300,390 292,390 L248,390 Q240,390 240,382 L240,343 Q240,335 248,335 Z"/>
+        <path android:fillColor="#DBEAFE" android:pathData="M328,335 L372,335 Q380,335 380,343 L380,382 Q380,390 372,390 L328,390 Q320,390 320,382 L320,343 Q320,335 328,335 Z"/>
+
+        <!-- grid cells row 3 -->
+        <path android:fillColor="#DBEAFE" android:pathData="M168,410 L212,410 Q220,410 220,418 L220,457 Q220,465 212,465 L168,465 Q160,465 160,457 L160,418 Q160,410 168,410 Z"/>
+        <path android:fillColor="#DBEAFE" android:pathData="M248,410 L292,410 Q300,410 300,418 L300,457 Q300,465 292,465 L248,465 Q240,465 240,457 L240,418 Q240,410 248,410 Z"/>
+
+        <!-- checkmark -->
+        <path
+            android:fillColor="#00000000"
+            android:strokeColor="#F8FAFC"
+            android:strokeWidth="10"
+            android:strokeLineCap="round"
+            android:strokeLineJoin="round"
+            android:pathData="M255,362 L272,379 L305,345"/>
+
+        <!-- bell body -->
+        <path
+            android:fillColor="#2563EB"
+            android:pathData="M420,300 C368,300 328,340 328,392 L328,460 L300,505 C296,512 302,520 310,520 L510,520 C518,520 524,512 520,505 L492,460 L492,392 C492,340 452,300 420,300 Z"/>
+
+        <!-- bell clapper -->
+        <path
+            android:fillColor="#1E40AF"
+            android:pathData="M388,520 C388,546 402,566 420,566 C438,566 452,546 452,520 Z"/>
+
+        <!-- bell top loop -->
+        <path
+            android:fillColor="#1E40AF"
+            android:pathData="M420,278m-16,0a16,16 0,1 1,32 0a16,16 0,1 1,-32 0"/>
+
+        <!-- bell highlight -->
+        <path
+            android:fillColor="#60A5FA"
+            android:fillAlpha="0.7"
+            android:pathData="M365,345m-16,-30a16,30 0,1 1,32 0a16,30 0,1 1,-32 0"/>
+
+    </group>
+
 </vector>
