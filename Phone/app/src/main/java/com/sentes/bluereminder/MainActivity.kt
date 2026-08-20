@@ -466,48 +466,60 @@ fun ReminderEditorScreen(
                     IconButton(onClick = onDismiss) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Wstecz")
                     }
-                },
-                actions = {
-                    IconButton(
-                        onClick = {
-                            val finalReminderTime = if (reminderDate != null) {
-                                Calendar.getInstance().apply {
-                                    timeInMillis = reminderDate!!
-                                    if (hasReminderTime) {
-                                        set(Calendar.HOUR_OF_DAY, reminderHour)
-                                        set(Calendar.MINUTE, reminderMinute)
-                                    } else {
-                                        set(Calendar.HOUR_OF_DAY, 0)
-                                        set(Calendar.MINUTE, 0)
-                                    }
-                                    set(Calendar.SECOND, 0)
-                                    set(Calendar.MILLISECOND, 0)
-                                }.timeInMillis
-                            } else null
-
-                            val finalEventTime = if (eventDate != null) {
-                                Calendar.getInstance().apply {
-                                    timeInMillis = eventDate!!
-                                    if (hasEventTime) {
-                                        set(Calendar.HOUR_OF_DAY, eventHour)
-                                        set(Calendar.MINUTE, eventMinute)
-                                    } else {
-                                        set(Calendar.HOUR_OF_DAY, 0)
-                                        set(Calendar.MINUTE, 0)
-                                    }
-                                    set(Calendar.SECOND, 0)
-                                    set(Calendar.MILLISECOND, 0)
-                                }.timeInMillis
-                            } else null
-
-                            onConfirm(title, description, finalReminderTime, finalEventTime)
-                        },
-                        enabled = title.isNotBlank()
-                    ) {
-                        Icon(Icons.Default.Check, contentDescription = "Zapisz")
-                    }
                 }
             )
+        },
+        bottomBar = {
+            BottomAppBar(
+                containerColor = MaterialTheme.colorScheme.surface,
+                contentPadding = PaddingValues(16.dp, 8.dp)
+            ) {
+                Button(
+                    onClick = {
+                        val finalReminderTime = if (reminderDate != null) {
+                            Calendar.getInstance().apply {
+                                timeInMillis = reminderDate!!
+                                if (hasReminderTime) {
+                                    set(Calendar.HOUR_OF_DAY, reminderHour)
+                                    set(Calendar.MINUTE, reminderMinute)
+                                } else {
+                                    set(Calendar.HOUR_OF_DAY, 0)
+                                    set(Calendar.MINUTE, 0)
+                                }
+                                set(Calendar.SECOND, 0)
+                                set(Calendar.MILLISECOND, 0)
+                            }.timeInMillis
+                        } else null
+
+                        val finalEventTime = if (eventDate != null) {
+                            Calendar.getInstance().apply {
+                                timeInMillis = eventDate!!
+                                if (hasEventTime) {
+                                    set(Calendar.HOUR_OF_DAY, eventHour)
+                                    set(Calendar.MINUTE, eventMinute)
+                                } else {
+                                    set(Calendar.HOUR_OF_DAY, 0)
+                                    set(Calendar.MINUTE, 0)
+                                }
+                                set(Calendar.SECOND, 0)
+                                set(Calendar.MILLISECOND, 0)
+                            }.timeInMillis
+                        } else null
+
+                        onConfirm(title, description, finalReminderTime, finalEventTime)
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = title.isNotBlank(),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        contentColor = MaterialTheme.colorScheme.onPrimary
+                    )
+                ) {
+                    Icon(Icons.Default.Check, contentDescription = null)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Zapisz")
+                }
+            }
         }
     ) { innerPadding ->
         Column(
