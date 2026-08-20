@@ -242,7 +242,10 @@ fun TransformingLazyColumnItemScope.ReminderItem(
                 Text(
                     text = reminder.reminderTime?.format(timeFormatter) ?: "",
                     style = MaterialTheme.typography.bodySmall,
-                    color = Color.Blue,
+                    color = when {
+                        isOverdue || reminder.isCompleted -> Color.White
+                        else -> Color.Blue
+                    },
                     textDecoration = if (reminder.isCompleted) TextDecoration.LineThrough else null,
                 )
             }
