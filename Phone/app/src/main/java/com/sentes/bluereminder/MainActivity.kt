@@ -147,7 +147,7 @@ fun ReminderApp(viewModel: ReminderViewModel = viewModel()) {
                 onEditReminder = { currentScreen = Screen.Editor(it) },
                 onToggleReminder = { viewModel.toggleReminderCompletion(it) },
                 onDeleteReminder = { viewModel.deleteReminder(it) },
-                onPostponeReminder = { viewModel.postponeReminder(it) },
+                onPostponeReminder = { reminder, duration -> viewModel.postponeReminder(reminder, duration) },
                 onExportJson = { exportLauncher.launch("reminders_backup.json") },
                 onImportJson = { importLauncher.launch(arrayOf("application/json")) }
             )
@@ -182,7 +182,7 @@ fun MainScreen(
     onEditReminder: (Reminder) -> Unit,
     onToggleReminder: (Reminder) -> Unit,
     onDeleteReminder: (Reminder) -> Unit,
-    onPostponeReminder: (Reminder) -> Unit,
+    onPostponeReminder: (Reminder, Long) -> Unit,
     onExportJson: () -> Unit,
     onImportJson: () -> Unit
 ) {
@@ -277,7 +277,7 @@ fun ReminderListContent(
     onToggleReminder: (Reminder) -> Unit,
     onEditReminder: (Reminder) -> Unit,
     onDeleteReminder: (Reminder) -> Unit,
-    onPostponeReminder: (Reminder) -> Unit
+    onPostponeReminder: (Reminder, Long) -> Unit
 ) {
     if (groupedReminders.isEmpty()) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -305,7 +305,7 @@ fun ReminderListContent(
                         onToggle = { onToggleReminder(reminder) },
                         onEdit = { onEditReminder(reminder) },
                         onDelete = { onDeleteReminder(reminder) },
-                        onPostpone = { onPostponeReminder(reminder) }
+                        onPostpone = { duration -> onPostponeReminder(reminder, duration) }
                     )
                 }
             }
@@ -320,7 +320,7 @@ fun ReminderCalendarContent(
     onToggleReminder: (Reminder) -> Unit,
     onEditReminder: (Reminder) -> Unit,
     onDeleteReminder: (Reminder) -> Unit,
-    onPostponeReminder: (Reminder) -> Unit
+    onPostponeReminder: (Reminder, Long) -> Unit
 ) {
     if (reminders.isEmpty()) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -358,7 +358,7 @@ fun ReminderCalendarContent(
                         onToggle = { onToggleReminder(reminder) },
                         onEdit = { onEditReminder(reminder) },
                         onDelete = { onDeleteReminder(reminder) },
-                        onPostpone = { onPostponeReminder(reminder) }
+                        onPostpone = { duration -> onPostponeReminder(reminder, duration) }
                     )
                 }
             }
@@ -372,7 +372,7 @@ fun ReminderItem(
     onToggle: () -> Unit,
     onEdit: () -> Unit,
     onDelete: () -> Unit,
-    onPostpone: () -> Unit
+    onPostpone: (Long) -> Unit
 ) {
     Card(
         modifier = Modifier
@@ -427,9 +427,7 @@ fun ReminderItem(
                 }
             }
             Row(verticalAlignment = Alignment.CenterVertically) {
-                TextButton(onClick = onPostpone) {
-                    Text("+1h")
-                }
+                SnoozeDropdown(onSnoozeSelected = onPostpone)
                 IconButton(onClick = onEdit) {
                     Icon(Icons.Default.Edit, contentDescription = "Edit")
                 }
@@ -437,6 +435,43 @@ fun ReminderItem(
                     Icon(Icons.Default.Delete, contentDescription = "Delete", tint = MaterialTheme.colorScheme.error)
                 }
             }
+        }
+    }
+}
+
+@Composable
+fun SnoozeDropdown(onSnoozeSelected: (Long) -> Unit) {
+    var expanded by remember { mutableStateOf(false) }
+    
+    Box {
+        TextButton(onClick = { expanded = true }) {
+            Text("+...")
+        }
+        DropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false }
+        ) {
+            DropdownMenuItem(
+                text = { Text("+1h") },
+                onClick = {
+                    onSnoozeSelected(60 * 60 * 1000L)
+                    expanded = false
+                }
+            )
+            DropdownMenuItem(
+                text = { Text("+2h") },
+                onClick = {
+                    onSnoozeSelected(2 * 60 * 60 * 1000L)
+                    expanded = false
+                }
+            )
+            DropdownMenuItem(
+                text = { Text("+1d") },
+                onClick = {
+                    onSnoozeSelected(24 * 60 * 60 * 1000L)
+                    expanded = false
+                }
+            )
         }
     }
 }
@@ -627,13 +662,13 @@ fun ReminderEditorScreen(
                     eventDate = null
                     hasEventTime = false
                 },
-                onPlusHourClick = {
+                onSnoozeClick = { duration ->
                     focusManager.clearFocus()
                     val cal = Calendar.getInstance().apply {
                         timeInMillis = eventDate ?: System.currentTimeMillis()
                         set(Calendar.HOUR_OF_DAY, eventHour)
                         set(Calendar.MINUTE, eventMinute)
-                        add(Calendar.HOUR_OF_DAY, 1)
+                        add(Calendar.MILLISECOND, duration.toInt())
                     }
                     eventHour = cal.get(Calendar.HOUR_OF_DAY)
                     eventMinute = cal.get(Calendar.MINUTE)
@@ -670,13 +705,13 @@ fun ReminderEditorScreen(
                     reminderDate = null
                     hasReminderTime = false
                 },
-                onPlusHourClick = {
+                onSnoozeClick = { duration ->
                     focusManager.clearFocus()
                     val cal = Calendar.getInstance().apply {
                         timeInMillis = reminderDate ?: System.currentTimeMillis()
                         set(Calendar.HOUR_OF_DAY, reminderHour)
                         set(Calendar.MINUTE, reminderMinute)
-                        add(Calendar.HOUR_OF_DAY, 1)
+                        add(Calendar.MILLISECOND, duration.toInt())
                     }
                     reminderHour = cal.get(Calendar.HOUR_OF_DAY)
                     reminderMinute = cal.get(Calendar.MINUTE)
@@ -776,7 +811,7 @@ fun DateTimeCard(
     onDateClick: () -> Unit,
     onTimeClick: () -> Unit,
     onClearClick: () -> Unit,
-    onPlusHourClick: () -> Unit
+    onSnoozeClick: (Long) -> Unit
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -828,9 +863,7 @@ fun DateTimeCard(
                         )
                     }
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        TextButton(onClick = onPlusHourClick) {
-                            Text("+1h")
-                        }
+                        SnoozeDropdown(onSnoozeSelected = onSnoozeClick)
                         Spacer(modifier = Modifier.width(8.dp))
                         Button(onClick = onTimeClick) {
                             Text("Zmień")

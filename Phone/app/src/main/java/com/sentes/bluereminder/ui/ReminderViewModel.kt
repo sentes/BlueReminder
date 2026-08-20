@@ -53,10 +53,10 @@ class ReminderViewModel(application: Application) : AndroidViewModel(application
         }
     }
 
-    fun postponeReminder(reminder: Reminder) {
+    fun postponeReminder(reminder: Reminder, durationMillis: Long) {
         viewModelScope.launch {
             val baseTime = reminder.reminderTime ?: System.currentTimeMillis()
-            val newTime = baseTime + (60 * 60 * 1000) // Add 1 hour
+            val newTime = baseTime + durationMillis
             repository.update(reminder.copy(reminderTime = newTime, isCompleted = false))
         }
     }
