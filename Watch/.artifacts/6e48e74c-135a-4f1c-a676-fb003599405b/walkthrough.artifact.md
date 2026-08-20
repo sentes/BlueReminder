@@ -1,21 +1,17 @@
-# Walkthrough - Enter Custom Title for Quick Reminders
+# Walkthrough - Use Snooze Icon
 
-I have implemented the ability to enter a custom title for quick reminders by launching the Wear OS system input interface.
+I have replaced the "+" text with a standard snooze icon for a better visual representation of the snooze action.
 
 ## Changes
 
 ### Build Configuration
-- [MODIFY] [libs.versions.toml](file:///C:/git/BlueReminder/Watch/gradle/libs.versions.toml): Added `androidx.wear:wear-input` dependency.
-- [MODIFY] [build.gradle.kts](file:///C:/git/BlueReminder/Watch/app/build.gradle.kts): Included the `wear-input` library.
-
-### UI Logic Layer
-- [MODIFY] [MainViewModel.kt](file:///C:/git/BlueReminder/Watch/app/src/main/java/com/sentes/bluereminder/presentation/MainViewModel.kt): Updated `addQuickReminder` to accept a custom `title`.
+- [MODIFY] [libs.versions.toml](file:///C:/git/BlueReminder/Watch/gradle/libs.versions.toml): Added `androidx.compose.material:material-icons-extended` dependency.
+- [MODIFY] [build.gradle.kts](file:///C:/git/BlueReminder/Watch/app/build.gradle.kts): Included the `material-icons-extended` library.
 
 ### UI Layer
 - [MODIFY] [MainActivity.kt](file:///C:/git/BlueReminder/Watch/app/src/main/java/com/sentes/bluereminder/presentation/MainActivity.kt):
-    - Integrated `RemoteInputIntentHelper` and `rememberLauncherForActivityResult` to handle system text input.
-    - Updated the "Dodaj (+1h)" button to launch the system input dialog before creating the reminder.
-- [MODIFY] [strings.xml](file:///C:/git/BlueReminder/Watch/app/src/main/res/values/strings.xml): Added `enter_reminder_title` for the input dialog prompt.
+    - Replaced `Text("+", ...)` with `Icon(Icons.Default.Snooze, ...)` in the `ReminderItem`.
+    - Added necessary imports for Material Icons.
 
 ## Verification Results
 
@@ -24,6 +20,5 @@ I have implemented the ability to enter a custom title for quick reminders by la
 
 ## How to Test
 1. Launch the app on your Wear OS device.
-2. Click the "Dodaj (+1h)" button.
-3. The system input interface will appear. You can type, use voice, or choose an emoji for the reminder title.
-4. After confirming the input, the reminder will be sent to your phone with the title you provided.
+2. Observe the snooze button on the right side of each reminder.
+3. It should now show a clock with a snooze (Zzz) icon instead of a simple plus sign.

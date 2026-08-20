@@ -17,3 +17,7 @@
 - `[x]` Update `MainActivity.kt` to launch system input for quick reminder
 - `[x]` Add `enter_reminder_title` to `strings.xml`
 - `[x]` Verify build
+- `[ ]` Update `snoozeReminder` in `PhoneService.kt` to accept `durationHours`
+- `[ ]` Update `snoozeReminder` in `MainViewModel.kt` to accept `durationHours`
+- `[ ]` Implement Snooze Selection Dialog in `MainActivity.kt`
+- `[ ]` Verify build

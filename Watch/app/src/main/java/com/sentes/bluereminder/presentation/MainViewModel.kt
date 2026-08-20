@@ -33,10 +33,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    fun snoozeReminder(reminder: Reminder) {
+    fun snoozeReminder(reminder: Reminder, durationHours: Int) {
         viewModelScope.launch {
             try {
-                phoneService.snoozeReminder(reminder.id)
+                phoneService.snoozeReminder(reminder.id, durationHours)
             } catch (e: Exception) {
                 // Handle error
             }

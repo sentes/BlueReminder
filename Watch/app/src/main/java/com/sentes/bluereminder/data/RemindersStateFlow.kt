@@ -4,6 +4,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import java.time.LocalDate
 
 object RemindersStateFlow {
     private val _reminders = MutableStateFlow<List<Reminder>>(emptyList())
@@ -22,7 +23,13 @@ object RemindersStateFlow {
             } else {
                 mutableList.add(updatedReminder)
             }
-            mutableList.sortedBy { it.reminderTime }
+
+            val today = LocalDate.now()
+            if (updatedReminder.reminderTime?.toLocalDate()?.isEqual(today) != true) {
+                mutableList.remove(updatedReminder)
+            }
+
+            mutableList
         }
     }
 

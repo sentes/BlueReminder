@@ -16,6 +16,9 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -34,12 +37,16 @@ import androidx.wear.compose.material3.AppScaffold
 import androidx.wear.compose.material3.Button
 import androidx.wear.compose.material3.ButtonDefaults
 import androidx.wear.compose.material3.CircularProgressIndicator
+import androidx.wear.compose.material3.Dialog
 import androidx.wear.compose.material3.EdgeButton
 import androidx.wear.compose.material3.ListHeader
 import androidx.wear.compose.material3.MaterialTheme
 import androidx.wear.compose.material3.ScreenScaffold
 import androidx.wear.compose.material3.SurfaceTransformation
 import androidx.wear.compose.material3.Text
+import androidx.wear.compose.material3.Icon
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Snooze
 import androidx.wear.compose.material3.lazy.TransformationSpec
 import androidx.wear.compose.material3.lazy.rememberTransformationSpec
 import androidx.wear.compose.material3.lazy.transformedHeight
@@ -68,6 +75,7 @@ class MainActivity : ComponentActivity() {
 fun WearApp(viewModel: MainViewModel) {
     val reminders by viewModel.reminders.collectAsStateWithLifecycle()
     val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
+    var snoozeTarget by remember { mutableStateOf<Reminder?>(null) }
 
     val inputTextKey = "reminder_title"
     val remoteInputLauncher = rememberLauncherForActivityResult(
@@ -134,7 +142,7 @@ fun WearApp(viewModel: MainViewModel) {
                                     ReminderItem(
                                         reminder,
                                         transformationSpec,
-                                        onSnooze = { viewModel.snoozeReminder(reminder) },
+                                        onSnooze = { snoozeTarget = reminder },
                                         onDismiss = { viewModel.toggleDismissReminder(reminder) }
                                     )
                                 }
@@ -177,6 +185,76 @@ fun WearApp(viewModel: MainViewModel) {
                         CircularProgressIndicator(
                             modifier = Modifier.align(Alignment.Center)
                         )
+                    }
+                }
+            }
+        }
+    }
+
+    if (snoozeTarget != null) {
+        val target = snoozeTarget!!
+        Dialog(
+            visible = true,
+            onDismissRequest = { snoozeTarget = null }
+        ) {
+            val listState = rememberTransformingLazyColumnState()
+            ScreenScaffold(scrollState = listState) { contentPadding ->
+                TransformingLazyColumn(
+                    state = listState,
+                    contentPadding = contentPadding
+                ) {
+                    item {
+                        ListHeader {
+                            Text(
+                                text = "Drzemka",
+                                style = MaterialTheme.typography.titleMedium
+                            )
+                        }
+                    }
+                    item {
+                        Button(
+                            onClick = {
+                                viewModel.snoozeReminder(target, 1)
+                                snoozeTarget = null
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.surfaceContainer,
+                                contentColor = MaterialTheme.colorScheme.onSurface
+                            )
+                        ) {
+                            Text("+1 godzina")
+                        }
+                    }
+                    item {
+                        Button(
+                            onClick = {
+                                viewModel.snoozeReminder(target, 2)
+                                snoozeTarget = null
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.surfaceContainer,
+                                contentColor = MaterialTheme.colorScheme.onSurface
+                            )
+                        ) {
+                            Text("+2 godziny")
+                        }
+                    }
+                    item {
+                        Button(
+                            onClick = {
+                                viewModel.snoozeReminder(target, 24)
+                                snoozeTarget = null
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.surfaceContainer,
+                                contentColor = MaterialTheme.colorScheme.onSurface
+                            )
+                        ) {
+                            Text("+1 dzień")
+                        }
                     }
                 }
             }
@@ -265,15 +343,11 @@ fun TransformingLazyColumnItemScope.ReminderItem(
                 disabledContentColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
             )
         ) {
-            Text("+1h", style = MaterialTheme.typography.labelSmall)
+            Icon(
+                imageVector = Icons.Default.Snooze,
+                contentDescription = "Snooze",
+                modifier = Modifier.size(24.dp)
+            )
         }
     }
-}
-
-@WearPreviewDevices
-@WearPreviewFontScales
-@Composable
-fun DefaultPreview() {
-    // Note: In a real preview you'd want a mock ViewModel or separate Composable for the content
-    // WearApp(viewModel = ...) 
 }

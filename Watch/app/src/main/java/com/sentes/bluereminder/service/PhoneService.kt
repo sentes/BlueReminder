@@ -37,7 +37,7 @@ class PhoneService(
         return capabilityInfo.nodes.toString() + "/" + result.toString()
     }
 
-    suspend fun snoozeReminder(reminderId: String): String {
+    suspend fun snoozeReminder(reminderId: String, durationHours: Int): String {
         val client = Wearable.getMessageClient(context)
 
         val capabilityInfo = Wearable.getCapabilityClient(context)
@@ -47,11 +47,16 @@ class PhoneService(
             throw InvalidObjectException("NoPhoneNodesFound")
         }
 
+        val json = JSONObject().apply {
+            put("id", reminderId)
+            put("durationHours", durationHours)
+        }
+
         val result =
             client.sendMessage(
                 capabilityInfo.nodes.first().id,
                 "/reminder/snooze",
-                reminderId.toByteArray()
+                json.toString().toByteArray()
             )
                 .await()
         return capabilityInfo.nodes.toString() + "/" + result.toString()

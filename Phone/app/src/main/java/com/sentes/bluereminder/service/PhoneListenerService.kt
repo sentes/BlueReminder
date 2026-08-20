@@ -62,15 +62,19 @@ class PhoneListenerService : WearableListenerService() {
         } else if (messageEvent.path == "/reminder/snooze") {
             serviceScope.launch {
                 try {
-                    val reminderId = String(messageEvent.data, Charsets.UTF_8).toLongOrNull()
+                    val requestJson = String(messageEvent.data, Charsets.UTF_8)
+                    val requestObject = JSONObject(requestJson)
+
+                    val reminderId = requestObject.getString("id").toLongOrNull()
+                    val durationHours = requestObject.getInt("durationHours")
                     if (reminderId != null) {
                         val reminder = repository.getReminderById(reminderId)
                         if (reminder != null) {
                             val baseTime = reminder.reminderTime ?: System.currentTimeMillis()
-                            val newTime = baseTime + (60 * 60 * 1000) // Add 1 hour
+                            val newTime = baseTime + (60 * 60 * 1000) * durationHours
                             val updatedReminder = reminder.copy(reminderTime = newTime, isCompleted = false)
                             repository.update(updatedReminder)
-                            Log.d(TAG, "Reminder $reminderId snoozed by 1 hour")
+                            Log.d(TAG, "Reminder $reminderId snoozed by $durationHours hours")
 
                             // Send updated reminder back to wearable
                             val jsonObject = JSONObject().apply {
