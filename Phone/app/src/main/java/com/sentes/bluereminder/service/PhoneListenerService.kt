@@ -78,6 +78,7 @@ class PhoneListenerService : WearableListenerService() {
                                 put("title", updatedReminder.title)
                                 put("description", updatedReminder.description)
                                 put("reminderTime", updatedReminder.reminderTime)
+                                put("eventTime", updatedReminder.eventTime)
                             }
                             
                             Wearable.getMessageClient(this@PhoneListenerService)
@@ -111,6 +112,7 @@ class PhoneListenerService : WearableListenerService() {
                                 put("title", updatedReminder.title)
                                 put("description", updatedReminder.description)
                                 put("reminderTime", updatedReminder.reminderTime)
+                                put("eventTime", updatedReminder.eventTime)
                                 put("isCompleted", true)
                             }
 
@@ -159,6 +161,7 @@ class PhoneListenerService : WearableListenerService() {
                 put("id", reminder.id)
                 put("title", reminder.title)
                 put("description", reminder.description)
+                put("eventTime", reminder.eventTime)
                 put("reminderTime", reminder.reminderTime)
             }
             jsonArray.put(jsonObject)

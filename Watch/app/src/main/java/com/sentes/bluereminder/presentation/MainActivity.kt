@@ -48,6 +48,7 @@ import androidx.wear.compose.ui.tooling.preview.WearPreviewDevices
 import androidx.wear.compose.ui.tooling.preview.WearPreviewFontScales
 import androidx.wear.input.RemoteInputIntentHelper
 import android.app.RemoteInput
+import androidx.compose.ui.graphics.Color
 import com.sentes.bluereminder.R
 import com.sentes.bluereminder.data.Reminder
 import com.sentes.bluereminder.presentation.theme.BlueReminderTheme
@@ -111,7 +112,9 @@ fun WearApp(viewModel: MainViewModel) {
                         item {
                             ListHeader(
                                 modifier =
-                                    Modifier.fillMaxWidth().transformedHeight(this, transformationSpec),
+                                    Modifier
+                                        .fillMaxWidth()
+                                        .transformedHeight(this, transformationSpec),
                                 transformation = SurfaceTransformation(transformationSpec),
                             ) {
                                 Text(text = stringResource(R.string.today_reminders))
@@ -147,8 +150,12 @@ fun WearApp(viewModel: MainViewModel) {
                                         .setLabel(enterTitleLabel)
                                         .build()
 
-                                    val intent = RemoteInputIntentHelper.createActionRemoteInputIntent()
-                                    RemoteInputIntentHelper.putRemoteInputsExtra(intent, listOf(remoteInput))
+                                    val intent =
+                                        RemoteInputIntentHelper.createActionRemoteInputIntent()
+                                    RemoteInputIntentHelper.putRemoteInputsExtra(
+                                        intent,
+                                        listOf(remoteInput)
+                                    )
 
                                     remoteInputLauncher.launch(intent)
                                 },
@@ -185,8 +192,10 @@ fun TransformingLazyColumnItemScope.ReminderItem(
     onSnooze: () -> Unit,
     onDismiss: () -> Unit
 ) {
+
+    val dateTimeFormatter = DateTimeFormatter.ofPattern("dd MMM HH:mm")
     val timeFormatter = DateTimeFormatter.ofPattern("HH:mm")
-    val isOverdue = reminder.reminderTime.isBefore(LocalDateTime.now())
+    val isOverdue = reminder.reminderTime?.isBefore(LocalDateTime.now()) == true
 
     Row(
         modifier = Modifier
@@ -208,29 +217,41 @@ fun TransformingLazyColumnItemScope.ReminderItem(
                     disabledContainerColor = MaterialTheme.colorScheme.surfaceContainer,
                     disabledContentColor = MaterialTheme.colorScheme.onSurface
                 )
+
                 isOverdue -> ButtonDefaults.buttonColors(
                     containerColor = MaterialTheme.colorScheme.errorContainer,
                     contentColor = MaterialTheme.colorScheme.onErrorContainer
                 )
+
                 else -> ButtonDefaults.buttonColors()
             }
         ) {
-            Column(modifier = Modifier.fillMaxWidth().padding(4.dp)) {
+            Column(modifier = Modifier
+                .fillMaxWidth()
+                .padding(4.dp)) {
+                if (reminder.eventTime != null) {
+                    Text(
+                        text = reminder.eventTime.format(dateTimeFormatter) ?: "",
+                        style = MaterialTheme.typography.bodySmall,
+                        textDecoration = if (reminder.isCompleted) TextDecoration.LineThrough else null
+                    )
+                }
                 Text(
                     text = reminder.title,
                     style = MaterialTheme.typography.titleMedium,
                     textDecoration = if (reminder.isCompleted) TextDecoration.LineThrough else null
                 )
                 Text(
-                    text = reminder.reminderTime.format(timeFormatter),
+                    text = reminder.reminderTime?.format(timeFormatter) ?: "",
                     style = MaterialTheme.typography.bodySmall,
-                    textDecoration = if (reminder.isCompleted) TextDecoration.LineThrough else null
+                    color = Color.Blue,
+                    textDecoration = if (reminder.isCompleted) TextDecoration.LineThrough else null,
                 )
             }
         }
-        
+
         Spacer(modifier = Modifier.width(4.dp))
-        
+
         Button(
             onClick = onSnooze,
             modifier = Modifier.size(width = 52.dp, height = 52.dp),

@@ -22,7 +22,8 @@ class WatchListenerService : WearableListenerService() {
                 id = jsonObject.getString("id"),
                 title = jsonObject.getString("title"),
                 description = jsonObject.getString("description"),
-                reminderTime = getReminderTime(jsonObject),
+                reminderTime = getTime(jsonObject, "reminderTime"),
+                eventTime = getTime(jsonObject, "eventTime"),
                 isCompleted = jsonObject.optBoolean("isCompleted", false)
             )
 
@@ -34,7 +35,8 @@ class WatchListenerService : WearableListenerService() {
                 id = jsonObject.getString("id"),
                 title = jsonObject.getString("title"),
                 description = jsonObject.getString("description"),
-                reminderTime = getReminderTime(jsonObject),
+                reminderTime = getTime(jsonObject, "reminderTime"),
+                eventTime = getTime(jsonObject, "eventTime"),
                 isCompleted = jsonObject.optBoolean("isCompleted", false)
             )
 
@@ -53,7 +55,8 @@ class WatchListenerService : WearableListenerService() {
                             id = obj.getString("id"),
                             title = obj.getString("title"),
                             description = obj.getString("description"),
-                            reminderTime = getReminderTime(obj),
+                            reminderTime = getTime(obj, "reminderTime"),
+                            eventTime = getTime(obj, "eventTime"),
                             isCompleted = obj.optBoolean("isCompleted", false)
                         )
                     )
@@ -66,41 +69,14 @@ class WatchListenerService : WearableListenerService() {
         }
     }
 
-    fun getReminderTime(obj: JSONObject): LocalDateTime {
-        try {
-            if (obj.has("reminderTime") && !obj.isNull("reminderTime")) {
-                val timeValue = obj.get("reminderTime")
-                return when (timeValue) {
-                    is Number -> {
-                        Instant.ofEpochMilli(timeValue.toLong())
-                            .atZone(ZoneId.systemDefault())
-                            .toLocalDateTime()
-                    }
-
-                    is String -> {
-                        // Try to parse as Long first (if stringified number)
-                        val longValue = timeValue.toLongOrNull()
-                        if (longValue != null) {
-                            Instant.ofEpochMilli(longValue)
-                                .atZone(ZoneId.systemDefault())
-                                .toLocalDateTime()
-                        } else {
-                            LocalDateTime.parse(timeValue)
-                        }
-                    }
-
-                    else -> LocalDateTime.now()
-                }
-            } else {
-                return LocalDateTime.now()
-            }
-        } catch (e: Exception) {
-            Log.e(
-                "WatchListenerService",
-                "Failed to parse time for reminder ${obj.optString("id")}",
-                e
-            )
-            return LocalDateTime.now()
+    fun getTime(obj: JSONObject, key: String): LocalDateTime? {
+        if (obj.has(key) && !obj.isNull(key)) {
+            val timeValue = obj.getLong(key)
+            return Instant.ofEpochMilli(timeValue)
+                .atZone(ZoneId.systemDefault())
+                .toLocalDateTime()
         }
+
+        return null
     }
 }

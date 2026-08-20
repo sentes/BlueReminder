@@ -6,6 +6,7 @@ data class Reminder(
     val id: String,
     val title: String,
     val description: String,
-    val reminderTime: LocalDateTime,
+    val reminderTime: LocalDateTime?,
+    val eventTime: LocalDateTime?,
     val isCompleted: Boolean = false
 )
