@@ -11,5 +11,6 @@ data class Reminder(
     val description: String = "",
     val isCompleted: Boolean = false,
     val reminderTime: Long? = null,
+    val eventTime: Long? = null,
     val createdAt: Long = System.currentTimeMillis()
 )

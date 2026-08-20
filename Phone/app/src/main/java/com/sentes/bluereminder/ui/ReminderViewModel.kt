@@ -25,10 +25,10 @@ class ReminderViewModel(application: Application) : AndroidViewModel(application
         )
     }
 
-    fun addReminder(title: String, description: String = "", reminderTime: Long? = null) {
+    fun addReminder(title: String, description: String = "", reminderTime: Long? = null, eventTime: Long? = null) {
         if (title.isBlank()) return
         viewModelScope.launch {
-            repository.insert(Reminder(title = title, description = description, reminderTime = reminderTime))
+            repository.insert(Reminder(title = title, description = description, reminderTime = reminderTime, eventTime = eventTime))
         }
     }
 
@@ -38,10 +38,10 @@ class ReminderViewModel(application: Application) : AndroidViewModel(application
         }
     }
 
-    fun updateReminder(reminder: Reminder, title: String, description: String, reminderTime: Long?) {
+    fun updateReminder(reminder: Reminder, title: String, description: String, reminderTime: Long?, eventTime: Long? = null) {
         if (title.isBlank()) return
         viewModelScope.launch {
-            repository.update(reminder.copy(title = title, description = description, reminderTime = reminderTime))
+            repository.update(reminder.copy(title = title, description = description, reminderTime = reminderTime, eventTime = eventTime))
         }
     }
 

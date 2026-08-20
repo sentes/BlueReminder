@@ -11,6 +11,8 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
@@ -128,11 +130,11 @@ fun ReminderApp(viewModel: ReminderViewModel = viewModel()) {
             ReminderEditorScreen(
                 reminder = screen.reminder,
                 onDismiss = { currentScreen = Screen.List },
-                onConfirm = { title, desc, time ->
+                onConfirm = { title, desc, reminderTime, eventTime ->
                     if (screen.reminder == null) {
-                        viewModel.addReminder(title, desc, time)
+                        viewModel.addReminder(title, desc, reminderTime, eventTime)
                     } else {
-                        viewModel.updateReminder(screen.reminder, title, desc, time)
+                        viewModel.updateReminder(screen.reminder, title, desc, reminderTime, eventTime)
                     }
                     currentScreen = Screen.List
                 }
@@ -234,16 +236,29 @@ fun ReminderItem(
                         color = Color.Gray,
                     )
                 }
-                reminder.reminderTime?.let { time ->
-                    val dateStr = remember(time) {
-                        SimpleDateFormat("dd MMM, yyyy HH:mm", Locale.getDefault()).format(Date(time))
+                
+                Column(modifier = Modifier.padding(top = 4.dp)) {
+                    reminder.eventTime?.let { time ->
+                        val dateStr = remember(time) {
+                            SimpleDateFormat("dd MMM, yyyy HH:mm", Locale.getDefault()).format(Date(time))
+                        }
+                        Text(
+                            text = "Termin: $dateStr",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.secondary
+                        )
                     }
-                    Text(
-                        text = "Powiadomienie: $dateStr",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.padding(top = 4.dp)
-                    )
+
+                    reminder.reminderTime?.let { time ->
+                        val dateStr = remember(time) {
+                            SimpleDateFormat("dd MMM, yyyy HH:mm", Locale.getDefault()).format(Date(time))
+                        }
+                        Text(
+                            text = "Powiadomienie: $dateStr",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
                 }
             }
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -266,9 +281,36 @@ fun ReminderItem(
 fun ReminderEditorScreen(
     reminder: Reminder? = null,
     onDismiss: () -> Unit,
-    onConfirm: (String, String, Long?) -> Unit
+    onConfirm: (String, String, Long?, Long?) -> Unit
 ) {
-    val calendar = remember(reminder) {
+    // Event Time States
+    val eventCalendar = remember(reminder) {
+        Calendar.getInstance().apply {
+            if (reminder?.eventTime != null) {
+                timeInMillis = reminder.eventTime
+            } else {
+                add(Calendar.HOUR_OF_DAY, 1)
+            }
+        }
+    }
+    val initialEventDate = remember(reminder) {
+        reminder?.eventTime?.let {
+            Calendar.getInstance().apply {
+                timeInMillis = it
+                set(Calendar.HOUR_OF_DAY, 0)
+                set(Calendar.MINUTE, 0)
+                set(Calendar.SECOND, 0)
+                set(Calendar.MILLISECOND, 0)
+            }.timeInMillis
+        }
+    }
+    var eventDate by remember { mutableStateOf<Long?>(initialEventDate) }
+    var eventHour by remember { mutableIntStateOf(eventCalendar.get(Calendar.HOUR_OF_DAY)) }
+    var eventMinute by remember { mutableIntStateOf(eventCalendar.get(Calendar.MINUTE)) }
+    var hasEventTime by remember { mutableStateOf(reminder?.eventTime != null) }
+
+    // Reminder Time States
+    val reminderCalendar = remember(reminder) {
         Calendar.getInstance().apply {
             if (reminder?.reminderTime != null) {
                 timeInMillis = reminder.reminderTime
@@ -277,67 +319,82 @@ fun ReminderEditorScreen(
             }
         }
     }
-    
-    val initialDate = remember(reminder) {
-        Calendar.getInstance().apply {
-            if (reminder?.reminderTime != null) {
-                timeInMillis = reminder.reminderTime
-            }
-            set(Calendar.HOUR_OF_DAY, 0)
-            set(Calendar.MINUTE, 0)
-            set(Calendar.SECOND, 0)
-            set(Calendar.MILLISECOND, 0)
-        }.timeInMillis
+    val initialReminderDate = remember(reminder) {
+        reminder?.reminderTime?.let {
+            Calendar.getInstance().apply {
+                timeInMillis = it
+                set(Calendar.HOUR_OF_DAY, 0)
+                set(Calendar.MINUTE, 0)
+                set(Calendar.SECOND, 0)
+                set(Calendar.MILLISECOND, 0)
+            }.timeInMillis
+        }
     }
+    var reminderDate by remember { mutableStateOf<Long?>(initialReminderDate) }
+    var reminderHour by remember { mutableIntStateOf(reminderCalendar.get(Calendar.HOUR_OF_DAY)) }
+    var reminderMinute by remember { mutableIntStateOf(reminderCalendar.get(Calendar.MINUTE)) }
+    var hasReminderTime by remember { mutableStateOf(reminder?.reminderTime != null || reminder == null) }
 
     var title by remember { mutableStateOf(reminder?.title ?: "") }
     var description by remember { mutableStateOf(reminder?.description ?: "") }
-    var selectedDate by remember { mutableStateOf<Long?>(initialDate) }
-    var selectedHour by remember { mutableIntStateOf(calendar.get(Calendar.HOUR_OF_DAY)) }
-    var selectedMinute by remember { mutableIntStateOf(calendar.get(Calendar.MINUTE)) }
-    var hasTime by remember { mutableStateOf(reminder?.reminderTime != null || reminder == null) }
 
-    var showDatePicker by remember { mutableStateOf(false) }
-    var showTimePicker by remember { mutableStateOf(false) }
+    var showEventDatePicker by remember { mutableStateOf(false) }
+    var showEventTimePicker by remember { mutableStateOf(false) }
+    var showReminderDatePicker by remember { mutableStateOf(false) }
+    var showReminderTimePicker by remember { mutableStateOf(false) }
 
-    val datePickerState = rememberDatePickerState(initialSelectedDateMillis = initialDate)
-    val timePickerState = rememberTimePickerState(
-        initialHour = selectedHour,
-        initialMinute = selectedMinute
-    )
+    val eventDatePickerState = rememberDatePickerState(initialSelectedDateMillis = initialEventDate)
+    val eventTimePickerState = rememberTimePickerState(initialHour = eventHour, initialMinute = eventMinute)
+    val reminderDatePickerState = rememberDatePickerState(initialSelectedDateMillis = initialReminderDate)
+    val reminderTimePickerState = rememberTimePickerState(initialHour = reminderHour, initialMinute = reminderMinute)
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(if (reminder == null) "Add Reminder" else "Edit Reminder") },
+                title = { Text(if (reminder == null) "Dodaj powiadomienie" else "Edytuj powiadomienie") },
                 navigationIcon = {
                     IconButton(onClick = onDismiss) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Wstecz")
                     }
                 },
                 actions = {
                     IconButton(
                         onClick = {
-                            val finalTime = if (selectedDate != null) {
-                                val cal = Calendar.getInstance().apply {
-                                    timeInMillis = selectedDate!!
-                                    if (hasTime) {
-                                        set(Calendar.HOUR_OF_DAY, selectedHour)
-                                        set(Calendar.MINUTE, selectedMinute)
+                            val finalReminderTime = if (reminderDate != null) {
+                                Calendar.getInstance().apply {
+                                    timeInMillis = reminderDate!!
+                                    if (hasReminderTime) {
+                                        set(Calendar.HOUR_OF_DAY, reminderHour)
+                                        set(Calendar.MINUTE, reminderMinute)
                                     } else {
                                         set(Calendar.HOUR_OF_DAY, 0)
                                         set(Calendar.MINUTE, 0)
                                     }
                                     set(Calendar.SECOND, 0)
                                     set(Calendar.MILLISECOND, 0)
-                                }
-                                cal.timeInMillis
+                                }.timeInMillis
                             } else null
-                            onConfirm(title, description, finalTime)
+
+                            val finalEventTime = if (eventDate != null) {
+                                Calendar.getInstance().apply {
+                                    timeInMillis = eventDate!!
+                                    if (hasEventTime) {
+                                        set(Calendar.HOUR_OF_DAY, eventHour)
+                                        set(Calendar.MINUTE, eventMinute)
+                                    } else {
+                                        set(Calendar.HOUR_OF_DAY, 0)
+                                        set(Calendar.MINUTE, 0)
+                                    }
+                                    set(Calendar.SECOND, 0)
+                                    set(Calendar.MILLISECOND, 0)
+                                }.timeInMillis
+                            } else null
+
+                            onConfirm(title, description, finalReminderTime, finalEventTime)
                         },
                         enabled = title.isNotBlank()
                     ) {
-                        Icon(Icons.Default.Check, contentDescription = "Save")
+                        Icon(Icons.Default.Check, contentDescription = "Zapisz")
                     }
                 }
             )
@@ -348,11 +405,12 @@ fun ReminderEditorScreen(
                 .padding(innerPadding)
                 .padding(16.dp)
                 .fillMaxSize()
+                .verticalScroll(rememberScrollState())
         ) {
             TextField(
                 value = title,
                 onValueChange = { title = it },
-                label = { Text("Title") },
+                label = { Text("Tytuł") },
                 modifier = Modifier.fillMaxWidth()
             )
             Spacer(modifier = Modifier.height(16.dp))
@@ -365,115 +423,222 @@ fun ReminderEditorScreen(
             )
             Spacer(modifier = Modifier.height(24.dp))
 
+            // Event Time Section
+            Text("Termin wydarzenia", style = MaterialTheme.typography.titleMedium)
+            Spacer(modifier = Modifier.height(8.dp))
+            DateTimeCard(
+                date = eventDate,
+                hour = eventHour,
+                minute = eventMinute,
+                hasTime = hasEventTime,
+                onDateClick = { showEventDatePicker = true },
+                onTimeClick = { showEventTimePicker = true },
+                onClearClick = {
+                    eventDate = null
+                    hasEventTime = false
+                },
+                onPlusHourClick = {
+                    val cal = Calendar.getInstance().apply {
+                        timeInMillis = eventDate ?: System.currentTimeMillis()
+                        set(Calendar.HOUR_OF_DAY, eventHour)
+                        set(Calendar.MINUTE, eventMinute)
+                        add(Calendar.HOUR_OF_DAY, 1)
+                    }
+                    eventHour = cal.get(Calendar.HOUR_OF_DAY)
+                    eventMinute = cal.get(Calendar.MINUTE)
+                    eventDate = cal.apply {
+                        set(Calendar.HOUR_OF_DAY, 0)
+                        set(Calendar.MINUTE, 0)
+                        set(Calendar.SECOND, 0)
+                        set(Calendar.MILLISECOND, 0)
+                    }.timeInMillis
+                    hasEventTime = true
+                }
+            )
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // Reminder Time Section
             Text("Powiadomienie", style = MaterialTheme.typography.titleMedium)
             Spacer(modifier = Modifier.height(8.dp))
-
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
-            ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column {
-                            Text("Date", style = MaterialTheme.typography.labelLarge)
-                            Text(
-                                text = selectedDate?.let {
-                                    SimpleDateFormat("MMM dd, yyyy", Locale.getDefault()).format(Date(it))
-                                } ?: "No date set",
-                                style = MaterialTheme.typography.bodyLarge
-                            )
-                        }
-                        Button(onClick = { showDatePicker = true }) {
-                            Text("Change")
-                        }
+            DateTimeCard(
+                date = reminderDate,
+                hour = reminderHour,
+                minute = reminderMinute,
+                hasTime = hasReminderTime,
+                onDateClick = { showReminderDatePicker = true },
+                onTimeClick = { showReminderTimePicker = true },
+                onClearClick = {
+                    reminderDate = null
+                    hasReminderTime = false
+                },
+                onPlusHourClick = {
+                    val cal = Calendar.getInstance().apply {
+                        timeInMillis = reminderDate ?: System.currentTimeMillis()
+                        set(Calendar.HOUR_OF_DAY, reminderHour)
+                        set(Calendar.MINUTE, reminderMinute)
+                        add(Calendar.HOUR_OF_DAY, 1)
                     }
+                    reminderHour = cal.get(Calendar.HOUR_OF_DAY)
+                    reminderMinute = cal.get(Calendar.MINUTE)
+                    reminderDate = cal.apply {
+                        set(Calendar.HOUR_OF_DAY, 0)
+                        set(Calendar.MINUTE, 0)
+                        set(Calendar.SECOND, 0)
+                        set(Calendar.MILLISECOND, 0)
+                    }.timeInMillis
+                    hasReminderTime = true
+                }
+            )
+        }
+    }
 
-                    if (selectedDate != null) {
-                        Spacer(modifier = Modifier.height(16.dp))
-                        HorizontalDivider()
-                        Spacer(modifier = Modifier.height(16.dp))
+    // Date/Time Picker Dialogs
+    if (showEventDatePicker) {
+        DatePickerDialog(
+            onDismissRequest = { showEventDatePicker = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    eventDate = eventDatePickerState.selectedDateMillis
+                    showEventDatePicker = false
+                }) { Text("OK") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showEventDatePicker = false }) { Text("Anuluj") }
+            }
+        ) {
+            DatePicker(state = eventDatePickerState)
+        }
+    }
 
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Column {
-                                Text("Time", style = MaterialTheme.typography.labelLarge)
-                                Text(
-                                    text = if (hasTime) String.format(Locale.getDefault(), "%02d:%02d", selectedHour, selectedMinute) else "No time set",
-                                    style = MaterialTheme.typography.bodyLarge
-                                )
-                            }
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                TextButton(onClick = {
-                                    val cal = Calendar.getInstance().apply {
-                                        timeInMillis = selectedDate!!
-                                        set(Calendar.HOUR_OF_DAY, selectedHour)
-                                        set(Calendar.MINUTE, selectedMinute)
-                                        add(Calendar.HOUR_OF_DAY, 1)
-                                    }
-                                    selectedHour = cal.get(Calendar.HOUR_OF_DAY)
-                                    selectedMinute = cal.get(Calendar.MINUTE)
-                                    selectedDate = cal.apply {
-                                        set(Calendar.HOUR_OF_DAY, 0)
-                                        set(Calendar.MINUTE, 0)
-                                        set(Calendar.SECOND, 0)
-                                        set(Calendar.MILLISECOND, 0)
-                                    }.timeInMillis
-                                    hasTime = true
-                                }) {
-                                    Text("+1h")
-                                }
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Button(onClick = { showTimePicker = true }) {
-                                    Text("Change")
-                                }
-                            }
+    if (showEventTimePicker) {
+        AlertDialog(
+            onDismissRequest = { showEventTimePicker = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    eventHour = eventTimePickerState.hour
+                    eventMinute = eventTimePickerState.minute
+                    hasEventTime = true
+                    showEventTimePicker = false
+                }) { Text("OK") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showEventTimePicker = false }) { Text("Anuluj") }
+            },
+            title = { Text("Wybierz godzinę") },
+            text = { TimePicker(state = eventTimePickerState) }
+        )
+    }
+
+    if (showReminderDatePicker) {
+        DatePickerDialog(
+            onDismissRequest = { showReminderDatePicker = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    reminderDate = reminderDatePickerState.selectedDateMillis
+                    showReminderDatePicker = false
+                }) { Text("OK") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showReminderDatePicker = false }) { Text("Anuluj") }
+            }
+        ) {
+            DatePicker(state = reminderDatePickerState)
+        }
+    }
+
+    if (showReminderTimePicker) {
+        AlertDialog(
+            onDismissRequest = { showReminderTimePicker = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    reminderHour = reminderTimePickerState.hour
+                    reminderMinute = reminderTimePickerState.minute
+                    hasReminderTime = true
+                    showReminderTimePicker = false
+                }) { Text("OK") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showReminderTimePicker = false }) { Text("Anuluj") }
+            },
+            title = { Text("Wybierz godzinę") },
+            text = { TimePicker(state = reminderTimePickerState) }
+        )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun DateTimeCard(
+    date: Long?,
+    hour: Int,
+    minute: Int,
+    hasTime: Boolean,
+    onDateClick: () -> Unit,
+    onTimeClick: () -> Unit,
+    onClearClick: () -> Unit,
+    onPlusHourClick: () -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column {
+                    Text("Data", style = MaterialTheme.typography.labelLarge)
+                    Text(
+                        text = date?.let {
+                            SimpleDateFormat("MMM dd, yyyy", Locale.getDefault()).format(Date(it))
+                        } ?: "Nie ustawiono",
+                        style = MaterialTheme.typography.bodyLarge
+                    )
+                }
+                Row {
+                    if (date != null) {
+                        TextButton(onClick = onClearClick) {
+                            Text("Usuń")
+                        }
+                        Spacer(modifier = Modifier.width(8.dp))
+                    }
+                    Button(onClick = onDateClick) {
+                        Text("Zmień")
+                    }
+                }
+            }
+
+            if (date != null) {
+                Spacer(modifier = Modifier.height(16.dp))
+                HorizontalDivider()
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column {
+                        Text("Godzina", style = MaterialTheme.typography.labelLarge)
+                        Text(
+                            text = if (hasTime) String.format(Locale.getDefault(), "%02d:%02d", hour, minute) else "Nie ustawiono",
+                            style = MaterialTheme.typography.bodyLarge
+                        )
+                    }
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        TextButton(onClick = onPlusHourClick) {
+                            Text("+1h")
+                        }
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Button(onClick = onTimeClick) {
+                            Text("Zmień")
                         }
                     }
                 }
             }
         }
-    }
-
-    if (showDatePicker) {
-        DatePickerDialog(
-            onDismissRequest = { showDatePicker = false },
-            confirmButton = {
-                TextButton(onClick = {
-                    selectedDate = datePickerState.selectedDateMillis
-                    showDatePicker = false
-                }) { Text("OK") }
-            },
-            dismissButton = {
-                TextButton(onClick = { showDatePicker = false }) { Text("Cancel") }
-            }
-        ) {
-            DatePicker(state = datePickerState)
-        }
-    }
-
-    if (showTimePicker) {
-        AlertDialog(
-            onDismissRequest = { showTimePicker = false },
-            confirmButton = {
-                TextButton(onClick = {
-                    selectedHour = timePickerState.hour
-                    selectedMinute = timePickerState.minute
-                    hasTime = true
-                    showTimePicker = false
-                }) { Text("OK") }
-            },
-            dismissButton = {
-                TextButton(onClick = { showTimePicker = false }) { Text("Cancel") }
-            },
-            title = { Text("Select Time") },
-            text = { TimePicker(state = timePickerState) }
-        )
     }
 }
