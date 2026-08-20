@@ -4,6 +4,7 @@ import android.Manifest
 import android.content.pm.PackageManager
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
@@ -11,7 +12,9 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.*
@@ -69,9 +72,14 @@ class MainActivity : ComponentActivity() {
 }
 
 enum class ReminderGroup(val title: String) {
-    Today("Today"),
-    Tomorrow("Tomorrow"),
-    Later("Later")
+    Today("Dziś"),
+    Tomorrow("Jutro"),
+    Later("Później")
+}
+
+sealed class Screen {
+    data object List : Screen()
+    data class Editor(val reminder: Reminder? = null) : Screen()
 }
 
 private fun getReminderGroup(reminderTime: Long?): ReminderGroup {
@@ -93,30 +101,71 @@ private fun getReminderGroup(reminderTime: Long?): ReminderGroup {
 @OptIn(ExperimentalMaterial3Api::class, androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
 fun ReminderApp(viewModel: ReminderViewModel = viewModel()) {
+    var currentScreen by remember { mutableStateOf<Screen>(Screen.List) }
+
     val reminders by viewModel.reminders.collectAsState()
-    var showAddDialog by remember { mutableStateOf(value = false) }
-    var editingReminder by remember { mutableStateOf<Reminder?>(null) }
 
     val groupedReminders = remember(reminders) {
         reminders.groupBy { getReminderGroup(it.reminderTime) }
             .toSortedMap(compareBy { it.ordinal })
     }
 
+    when (val screen = currentScreen) {
+        is Screen.List -> {
+            ReminderListScreen(
+                groupedReminders = groupedReminders,
+                onAddReminder = { currentScreen = Screen.Editor() },
+                onEditReminder = { currentScreen = Screen.Editor(it) },
+                onToggleReminder = { viewModel.toggleReminderCompletion(it) },
+                onDeleteReminder = { viewModel.deleteReminder(it) },
+                onPostponeReminder = { viewModel.postponeReminder(it) }
+            )
+        }
+        is Screen.Editor -> {
+            BackHandler {
+                currentScreen = Screen.List
+            }
+            ReminderEditorScreen(
+                reminder = screen.reminder,
+                onDismiss = { currentScreen = Screen.List },
+                onConfirm = { title, desc, time ->
+                    if (screen.reminder == null) {
+                        viewModel.addReminder(title, desc, time)
+                    } else {
+                        viewModel.updateReminder(screen.reminder, title, desc, time)
+                    }
+                    currentScreen = Screen.List
+                }
+            )
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class, androidx.compose.foundation.ExperimentalFoundationApi::class)
+@Composable
+fun ReminderListScreen(
+    groupedReminders: Map<ReminderGroup, List<Reminder>>,
+    onAddReminder: () -> Unit,
+    onEditReminder: (Reminder) -> Unit,
+    onToggleReminder: (Reminder) -> Unit,
+    onDeleteReminder: (Reminder) -> Unit,
+    onPostponeReminder: (Reminder) -> Unit
+) {
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         topBar = {
-            TopAppBar(title = { Text("Blue Reminders") })
+            TopAppBar(title = { Text("Powiadomienia") })
         },
         floatingActionButton = {
-            FloatingActionButton(onClick = { showAddDialog = true }) {
-                Icon(Icons.Default.Add, contentDescription = "Add Reminder")
+            FloatingActionButton(onClick = onAddReminder) {
+                Icon(Icons.Default.Add, contentDescription = "Dodaj powiadomienie")
             }
         }
     ) { innerPadding ->
         Column(modifier = Modifier.padding(innerPadding)) {
-            if (reminders.isEmpty()) {
+            if (groupedReminders.isEmpty()) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text("No reminders yet. Tap + to add one!")
+                    Text("Brak powiadomień")
                 }
             } else {
                 LazyColumn {
@@ -137,33 +186,14 @@ fun ReminderApp(viewModel: ReminderViewModel = viewModel()) {
                         items(remindersInGroup, key = { it.id }) { reminder ->
                             ReminderItem(
                                 reminder = reminder,
-                                onToggle = { viewModel.toggleReminderCompletion(reminder) },
-                                onEdit = { editingReminder = reminder },
-                                onDelete = { viewModel.deleteReminder(reminder) },
-                                onPostpone = { viewModel.postponeReminder(reminder) }
+                                onToggle = { onToggleReminder(reminder) },
+                                onEdit = { onEditReminder(reminder) },
+                                onDelete = { onDeleteReminder(reminder) },
+                                onPostpone = { onPostponeReminder(reminder) }
                             )
                         }
                     }
                 }
-            }
-        }
-
-        if (showAddDialog) {
-            ReminderDialog(
-                onDismiss = { showAddDialog = false }
-            ) { title, desc, time ->
-                viewModel.addReminder(title, desc, time)
-                showAddDialog = false
-            }
-        }
-
-        editingReminder?.let { reminder ->
-            ReminderDialog(
-                reminder = reminder,
-                onDismiss = { editingReminder = null }
-            ) { title, desc, time ->
-                viewModel.updateReminder(reminder, title, desc, time)
-                editingReminder = null
             }
         }
     }
@@ -206,10 +236,10 @@ fun ReminderItem(
                 }
                 reminder.reminderTime?.let { time ->
                     val dateStr = remember(time) {
-                        SimpleDateFormat("MMM dd, yyyy HH:mm", Locale.getDefault()).format(Date(time))
+                        SimpleDateFormat("dd MMM, yyyy HH:mm", Locale.getDefault()).format(Date(time))
                     }
                     Text(
-                        text = "Scheduled: $dateStr",
+                        text = "Powiadomienie: $dateStr",
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.padding(top = 4.dp)
@@ -233,7 +263,7 @@ fun ReminderItem(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ReminderDialog(
+fun ReminderEditorScreen(
     reminder: Reminder? = null,
     onDismiss: () -> Unit,
     onConfirm: (String, String, Long?) -> Unit
@@ -276,112 +306,140 @@ fun ReminderDialog(
         initialMinute = selectedMinute
     )
 
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(if (reminder == null) "Add Reminder" else "Edit Reminder") },
-        text = {
-            Column {
-                TextField(
-                    value = title,
-                    onValueChange = { title = it },
-                    label = { Text("Title") },
-                    modifier = Modifier.fillMaxWidth()
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                TextField(
-                    value = description,
-                    onValueChange = { description = it },
-                    label = { Text("Description (Optional)") },
-                    modifier = Modifier.fillMaxWidth()
-                )
-                Spacer(modifier = Modifier.height(16.dp))
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = selectedDate?.let {
-                            SimpleDateFormat("MMM dd, yyyy", Locale.getDefault()).format(Date(it))
-                        } ?: "No date set",
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                    Button(onClick = { showDatePicker = true }) {
-                        Text("Set Date")
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text(if (reminder == null) "Add Reminder" else "Edit Reminder") },
+                navigationIcon = {
+                    IconButton(onClick = onDismiss) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                    }
+                },
+                actions = {
+                    IconButton(
+                        onClick = {
+                            val finalTime = if (selectedDate != null) {
+                                val cal = Calendar.getInstance().apply {
+                                    timeInMillis = selectedDate!!
+                                    if (hasTime) {
+                                        set(Calendar.HOUR_OF_DAY, selectedHour)
+                                        set(Calendar.MINUTE, selectedMinute)
+                                    } else {
+                                        set(Calendar.HOUR_OF_DAY, 0)
+                                        set(Calendar.MINUTE, 0)
+                                    }
+                                    set(Calendar.SECOND, 0)
+                                    set(Calendar.MILLISECOND, 0)
+                                }
+                                cal.timeInMillis
+                            } else null
+                            onConfirm(title, description, finalTime)
+                        },
+                        enabled = title.isNotBlank()
+                    ) {
+                        Icon(Icons.Default.Check, contentDescription = "Save")
                     }
                 }
+            )
+        }
+    ) { innerPadding ->
+        Column(
+            modifier = Modifier
+                .padding(innerPadding)
+                .padding(16.dp)
+                .fillMaxSize()
+        ) {
+            TextField(
+                value = title,
+                onValueChange = { title = it },
+                label = { Text("Title") },
+                modifier = Modifier.fillMaxWidth()
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+            TextField(
+                value = description,
+                onValueChange = { description = it },
+                label = { Text("Opis") },
+                modifier = Modifier.fillMaxWidth(),
+                minLines = 3
+            )
+            Spacer(modifier = Modifier.height(24.dp))
 
-                if (selectedDate != null) {
+            Text("Powiadomienie", style = MaterialTheme.typography.titleMedium)
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text(
-                            text = if (hasTime) String.format(Locale.getDefault(), "%02d:%02d", selectedHour, selectedMinute) else "No time set",
-                            style = MaterialTheme.typography.bodyMedium
-                        )
-                        Row {
-                            TextButton(onClick = {
-                                val cal = Calendar.getInstance().apply {
-                                    timeInMillis = selectedDate!!
-                                    set(Calendar.HOUR_OF_DAY, selectedHour)
-                                    set(Calendar.MINUTE, selectedMinute)
-                                    add(Calendar.HOUR_OF_DAY, 1)
-                                }
-                                selectedHour = cal.get(Calendar.HOUR_OF_DAY)
-                                selectedMinute = cal.get(Calendar.MINUTE)
-                                selectedDate = cal.apply {
-                                    set(Calendar.HOUR_OF_DAY, 0)
-                                    set(Calendar.MINUTE, 0)
-                                    set(Calendar.SECOND, 0)
-                                    set(Calendar.MILLISECOND, 0)
-                                }.timeInMillis
-                                hasTime = true
-                            }) {
-                                Text("+1h")
+                        Column {
+                            Text("Date", style = MaterialTheme.typography.labelLarge)
+                            Text(
+                                text = selectedDate?.let {
+                                    SimpleDateFormat("MMM dd, yyyy", Locale.getDefault()).format(Date(it))
+                                } ?: "No date set",
+                                style = MaterialTheme.typography.bodyLarge
+                            )
+                        }
+                        Button(onClick = { showDatePicker = true }) {
+                            Text("Change")
+                        }
+                    }
+
+                    if (selectedDate != null) {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        HorizontalDivider()
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column {
+                                Text("Time", style = MaterialTheme.typography.labelLarge)
+                                Text(
+                                    text = if (hasTime) String.format(Locale.getDefault(), "%02d:%02d", selectedHour, selectedMinute) else "No time set",
+                                    style = MaterialTheme.typography.bodyLarge
+                                )
                             }
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Button(onClick = { showTimePicker = true }) {
-                                Text("Set Time")
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                TextButton(onClick = {
+                                    val cal = Calendar.getInstance().apply {
+                                        timeInMillis = selectedDate!!
+                                        set(Calendar.HOUR_OF_DAY, selectedHour)
+                                        set(Calendar.MINUTE, selectedMinute)
+                                        add(Calendar.HOUR_OF_DAY, 1)
+                                    }
+                                    selectedHour = cal.get(Calendar.HOUR_OF_DAY)
+                                    selectedMinute = cal.get(Calendar.MINUTE)
+                                    selectedDate = cal.apply {
+                                        set(Calendar.HOUR_OF_DAY, 0)
+                                        set(Calendar.MINUTE, 0)
+                                        set(Calendar.SECOND, 0)
+                                        set(Calendar.MILLISECOND, 0)
+                                    }.timeInMillis
+                                    hasTime = true
+                                }) {
+                                    Text("+1h")
+                                }
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Button(onClick = { showTimePicker = true }) {
+                                    Text("Change")
+                                }
                             }
                         }
                     }
                 }
             }
-        },
-        confirmButton = {
-            Button(
-                onClick = {
-                    val finalTime = if (selectedDate != null) {
-                        val calendar = Calendar.getInstance().apply {
-                            timeInMillis = selectedDate!!
-                            if (hasTime) {
-                                set(Calendar.HOUR_OF_DAY, selectedHour)
-                                set(Calendar.MINUTE, selectedMinute)
-                            } else {
-                                set(Calendar.HOUR_OF_DAY, 0)
-                                set(Calendar.MINUTE, 0)
-                            }
-                            set(Calendar.SECOND, 0)
-                            set(Calendar.MILLISECOND, 0)
-                        }
-                        calendar.timeInMillis
-                    } else null
-                    onConfirm(title, description, finalTime)
-                },
-                enabled = title.isNotBlank()
-            ) {
-                Text(if (reminder == null) "Add" else "Save")
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Cancel")
-            }
         }
-    )
+    }
 
     if (showDatePicker) {
         DatePickerDialog(

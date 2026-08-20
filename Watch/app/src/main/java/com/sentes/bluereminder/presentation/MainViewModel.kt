@@ -17,7 +17,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     
     val reminders: StateFlow<List<Reminder>> = RemindersStateFlow.reminders
 
-    private val _isLoading = MutableStateFlow(false)
+    private val _isLoading = MutableStateFlow(true)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
     fun refreshReminders() {
