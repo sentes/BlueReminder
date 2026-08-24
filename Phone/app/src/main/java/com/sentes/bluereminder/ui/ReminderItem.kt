@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -33,11 +34,21 @@ fun ReminderItem(
     onEdit: () -> Unit,
     onPostpone: (Long) -> Unit
 ) {
+    val isOverdue = !reminder.isCompleted && reminder.reminderTime != null && reminder.reminderTime < System.currentTimeMillis()
+    
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .padding(8.dp),
         onClick = onEdit,
+        colors = if (isOverdue) {
+            CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.errorContainer,
+                contentColor = MaterialTheme.colorScheme.onErrorContainer
+            )
+        } else {
+            CardDefaults.cardColors()
+        }
     ) {
         Row(
             modifier = Modifier
