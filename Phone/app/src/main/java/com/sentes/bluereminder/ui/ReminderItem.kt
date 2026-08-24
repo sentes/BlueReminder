@@ -33,7 +33,6 @@ fun ReminderItem(
     reminder: Reminder,
     onToggle: () -> Unit,
     onEdit: () -> Unit,
-    onDelete: () -> Unit,
     onPostpone: (Long) -> Unit
 ) {
     Card(
@@ -106,7 +105,7 @@ fun ReminderItem(
                         }
 
                         Text(
-                            text = dateStr,
+                            text = "Powiadomienie: $dateStr",
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.primary
                         )
@@ -117,9 +116,6 @@ fun ReminderItem(
                 SnoozeDropdown(onSnoozeSelected = onPostpone)
                 IconButton(onClick = onEdit) {
                     Icon(Icons.Default.Edit, contentDescription = "Edit")
-                }
-                IconButton(onClick = onDelete) {
-                    Icon(Icons.Default.Delete, contentDescription = "Delete", tint = MaterialTheme.colorScheme.error)
                 }
             }
         }

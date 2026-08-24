@@ -39,7 +39,6 @@ fun MainScreen(
     onAddReminder: () -> Unit,
     onEditReminder: (Reminder) -> Unit,
     onToggleReminder: (Reminder) -> Unit,
-    onDeleteReminder: (Reminder) -> Unit,
     onPostponeReminder: (Reminder, Long) -> Unit,
     onExportJson: () -> Unit,
     onImportJson: () -> Unit
@@ -106,7 +105,6 @@ fun MainScreen(
                         groupedReminders = groupedReminders,
                         onToggleReminder = onToggleReminder,
                         onEditReminder = onEditReminder,
-                        onDeleteReminder = onDeleteReminder,
                         onPostponeReminder = onPostponeReminder
                     )
                 }
@@ -119,7 +117,6 @@ fun MainScreen(
                         reminders = calendarReminders,
                         onToggleReminder = onToggleReminder,
                         onEditReminder = onEditReminder,
-                        onDeleteReminder = onDeleteReminder,
                         onPostponeReminder = onPostponeReminder
                     )
                 }

@@ -30,7 +30,6 @@ fun ReminderCalendarContent(
     reminders: List<Reminder>,
     onToggleReminder: (Reminder) -> Unit,
     onEditReminder: (Reminder) -> Unit,
-    onDeleteReminder: (Reminder) -> Unit,
     onPostponeReminder: (Reminder, Long) -> Unit
 ) {
     if (reminders.isEmpty()) {
@@ -68,7 +67,6 @@ fun ReminderCalendarContent(
                         reminder = reminder,
                         onToggle = { onToggleReminder(reminder) },
                         onEdit = { onEditReminder(reminder) },
-                        onDelete = { onDeleteReminder(reminder) },
                         onPostpone = { duration -> onPostponeReminder(reminder, duration) }
                     )
                 }

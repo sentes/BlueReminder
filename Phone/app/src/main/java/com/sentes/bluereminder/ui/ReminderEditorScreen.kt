@@ -14,6 +14,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.Button
@@ -51,7 +52,8 @@ import java.util.Calendar
 fun ReminderEditorScreen(
     reminder: Reminder? = null,
     onDismiss: () -> Unit,
-    onConfirm: (String, String, Long?, Long?) -> Unit
+    onConfirm: (String, String, Long?, Long?) -> Unit,
+    onDelete: () -> Unit
 ) {
     val focusManager = LocalFocusManager.current
     // Event Time States
@@ -126,6 +128,13 @@ fun ReminderEditorScreen(
                 navigationIcon = {
                     IconButton(onClick = onDismiss) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Wstecz")
+                    }
+                },
+                actions = {
+                    if (reminder != null) {
+                        IconButton(onClick = onDelete) {
+                            Icon(Icons.Default.Delete, contentDescription = "Usuń", tint = MaterialTheme.colorScheme.error)
+                        }
                     }
                 }
             )
