@@ -63,6 +63,9 @@ fun ReminderEditorScreen(
                 timeInMillis = reminder.eventTime
             } else {
                 add(Calendar.HOUR_OF_DAY, 1)
+                set(Calendar.MINUTE, 0)
+                set(Calendar.SECOND, 0)
+                set(Calendar.MILLISECOND, 0)
             }
         }
     }
@@ -89,6 +92,9 @@ fun ReminderEditorScreen(
                 timeInMillis = reminder.reminderTime
             } else {
                 add(Calendar.HOUR_OF_DAY, 1)
+                set(Calendar.MINUTE, 0)
+                set(Calendar.SECOND, 0)
+                set(Calendar.MILLISECOND, 0)
             }
         }
     }
@@ -312,7 +318,31 @@ fun ReminderEditorScreen(
             onDismissRequest = { showEventDatePicker = false },
             confirmButton = {
                 TextButton(onClick = {
-                    eventDate = eventDatePickerState.selectedDateMillis
+                    val newDate = eventDatePickerState.selectedDateMillis
+                    eventDate = newDate
+                    
+                    newDate?.let {
+                        val cal = Calendar.getInstance().apply { timeInMillis = it }
+                        val today = Calendar.getInstance().apply {
+                            set(Calendar.HOUR_OF_DAY, 0)
+                            set(Calendar.MINUTE, 0)
+                            set(Calendar.SECOND, 0)
+                            set(Calendar.MILLISECOND, 0)
+                        }
+                        val tomorrow = (today.clone() as Calendar).apply { add(Calendar.DATE, 1) }
+
+                        if (cal.get(Calendar.YEAR) == today.get(Calendar.YEAR) &&
+                            cal.get(Calendar.DAY_OF_YEAR) == today.get(Calendar.DAY_OF_YEAR)) {
+                            val now = Calendar.getInstance()
+                            now.add(Calendar.HOUR_OF_DAY, 1)
+                            eventHour = now.get(Calendar.HOUR_OF_DAY)
+                            eventMinute = 0
+                        } else if (cal.get(Calendar.YEAR) == tomorrow.get(Calendar.YEAR) &&
+                            cal.get(Calendar.DAY_OF_YEAR) == tomorrow.get(Calendar.DAY_OF_YEAR)) {
+                            eventHour = 8
+                            eventMinute = 0
+                        }
+                    }
                     showEventDatePicker = false
                 }) { Text("OK") }
             },
@@ -348,7 +378,31 @@ fun ReminderEditorScreen(
             onDismissRequest = { showReminderDatePicker = false },
             confirmButton = {
                 TextButton(onClick = {
-                    reminderDate = reminderDatePickerState.selectedDateMillis
+                    val newDate = reminderDatePickerState.selectedDateMillis
+                    reminderDate = newDate
+
+                    newDate?.let {
+                        val cal = Calendar.getInstance().apply { timeInMillis = it }
+                        val today = Calendar.getInstance().apply {
+                            set(Calendar.HOUR_OF_DAY, 0)
+                            set(Calendar.MINUTE, 0)
+                            set(Calendar.SECOND, 0)
+                            set(Calendar.MILLISECOND, 0)
+                        }
+                        val tomorrow = (today.clone() as Calendar).apply { add(Calendar.DATE, 1) }
+
+                        if (cal.get(Calendar.YEAR) == today.get(Calendar.YEAR) &&
+                            cal.get(Calendar.DAY_OF_YEAR) == today.get(Calendar.DAY_OF_YEAR)) {
+                            val now = Calendar.getInstance()
+                            now.add(Calendar.HOUR_OF_DAY, 1)
+                            reminderHour = now.get(Calendar.HOUR_OF_DAY)
+                            reminderMinute = 0
+                        } else if (cal.get(Calendar.YEAR) == tomorrow.get(Calendar.YEAR) &&
+                            cal.get(Calendar.DAY_OF_YEAR) == tomorrow.get(Calendar.DAY_OF_YEAR)) {
+                            reminderHour = 8
+                            reminderMinute = 0
+                        }
+                    }
                     showReminderDatePicker = false
                 }) { Text("OK") }
             },
