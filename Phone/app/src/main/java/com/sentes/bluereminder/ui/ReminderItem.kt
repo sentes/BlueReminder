@@ -5,12 +5,10 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Edit
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Card
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -39,7 +37,7 @@ fun ReminderItem(
         modifier = Modifier
             .fillMaxWidth()
             .padding(8.dp),
-        onClick = onToggle,
+        onClick = onEdit,
     ) {
         Row(
             modifier = Modifier
@@ -48,75 +46,82 @@ fun ReminderItem(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = reminder.title,
-                    style = MaterialTheme.typography.titleMedium,
-                    textDecoration = if (reminder.isCompleted) TextDecoration.LineThrough else null,
-                    color = if (reminder.isCompleted) Color.Gray else Color.Unspecified
+            Row(
+                modifier = Modifier.weight(1f),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Checkbox(
+                    checked = reminder.isCompleted,
+                    onCheckedChange = { onToggle() }
                 )
-                if (reminder.description.isNotBlank()) {
+                Spacer(modifier = Modifier.width(8.dp))
+                Column {
                     Text(
-                        text = reminder.description,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = Color.Gray,
+                        text = reminder.title,
+                        style = MaterialTheme.typography.titleMedium,
+                        textDecoration = if (reminder.isCompleted) TextDecoration.LineThrough else null,
+                        color = if (reminder.isCompleted) Color.Gray else Color.Unspecified
                     )
-                }
-
-                Column(modifier = Modifier.padding(top = 4.dp)) {
-                    reminder.eventTime?.let { time ->
-                        val dateStr = remember(time) {
-                            val eventDate = Instant.ofEpochMilli(time)
-                                .atZone(ZoneId.systemDefault())
-                                .toLocalDate()
-                            val today = LocalDate.now()
-                            val tomorrow = today.plusDays(1)
-
-                            val timeStr = SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date(time))
-
-                            when {
-                                eventDate.isEqual(today) -> "Dziś $timeStr"
-                                eventDate.isEqual(tomorrow) -> "Jutro $timeStr"
-                                else -> SimpleDateFormat("dd MMM, yyyy HH:mm", Locale.getDefault()).format(Date(time))
-                            }
-                        }
+                    if (reminder.description.isNotBlank()) {
                         Text(
-                            text = "Termin: $dateStr",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.secondary
+                            text = reminder.description,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Color.Gray,
                         )
                     }
 
-                    reminder.reminderTime?.let { time ->
-                        val dateStr = remember(time) {
-                            val reminderDate = Instant.ofEpochMilli(time)
-                                .atZone(ZoneId.systemDefault())
-                                .toLocalDate()
-                            val today = LocalDate.now()
-                            val tomorrow = today.plusDays(1)
+                    Column(modifier = Modifier.padding(top = 4.dp)) {
+                        reminder.eventTime?.let { time ->
+                            val dateStr = remember(time) {
+                                val eventDate = Instant.ofEpochMilli(time)
+                                    .atZone(ZoneId.systemDefault())
+                                    .toLocalDate()
+                                val today = LocalDate.now()
+                                val tomorrow = today.plusDays(1)
 
-                            val timeStr = SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date(time))
+                                val timeStr = SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date(time))
 
-                            when {
-                                reminderDate.isEqual(today) -> "Dziś $timeStr"
-                                reminderDate.isEqual(tomorrow) -> "Jutro $timeStr"
-                                else -> SimpleDateFormat("dd MMM, yyyy HH:mm", Locale.getDefault()).format(Date(time))
+                                when {
+                                    eventDate.isEqual(today) -> "Dziś $timeStr"
+                                    eventDate.isEqual(tomorrow) -> "Jutro $timeStr"
+                                    else -> SimpleDateFormat("dd MMM, yyyy HH:mm", Locale.getDefault()).format(Date(time))
+                                }
                             }
+                            Text(
+                                text = "Termin: $dateStr",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.secondary
+                            )
                         }
 
-                        Text(
-                            text = "Powiadomienie: $dateStr",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.primary
-                        )
+                        reminder.reminderTime?.let { time ->
+                            val dateStr = remember(time) {
+                                val reminderDate = Instant.ofEpochMilli(time)
+                                    .atZone(ZoneId.systemDefault())
+                                    .toLocalDate()
+                                val today = LocalDate.now()
+                                val tomorrow = today.plusDays(1)
+
+                                val timeStr = SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date(time))
+
+                                when {
+                                    reminderDate.isEqual(today) -> "Dziś $timeStr"
+                                    reminderDate.isEqual(tomorrow) -> "Jutro $timeStr"
+                                    else -> SimpleDateFormat("dd MMM, yyyy HH:mm", Locale.getDefault()).format(Date(time))
+                                }
+                            }
+
+                            Text(
+                                text = "Powiadomienie: $dateStr",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
                     }
                 }
             }
             Row(verticalAlignment = Alignment.CenterVertically) {
                 SnoozeDropdown(onSnoozeSelected = onPostpone)
-                IconButton(onClick = onEdit) {
-                    Icon(Icons.Default.Edit, contentDescription = "Edit")
-                }
             }
         }
     }
