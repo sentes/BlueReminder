@@ -53,6 +53,12 @@ class ReminderViewModel(application: Application) : AndroidViewModel(application
         }
     }
 
+    fun deleteCompletedReminders() {
+        viewModelScope.launch {
+            repository.deleteCompletedReminders()
+        }
+    }
+
     fun postponeReminder(reminder: Reminder, durationMillis: Long) {
         viewModelScope.launch {
             val baseTime = reminder.reminderTime ?: System.currentTimeMillis()

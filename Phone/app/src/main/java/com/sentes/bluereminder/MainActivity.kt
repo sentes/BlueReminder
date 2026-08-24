@@ -137,7 +137,8 @@ fun ReminderApp(viewModel: ReminderViewModel = viewModel()) {
                 onToggleReminder = { viewModel.toggleReminderCompletion(it) },
                 onPostponeReminder = { reminder, duration -> viewModel.postponeReminder(reminder, duration) },
                 onExportJson = { exportLauncher.launch("reminders_backup.json") },
-                onImportJson = { importLauncher.launch(arrayOf("application/json")) }
+                onImportJson = { importLauncher.launch(arrayOf("application/json")) },
+                onDeleteCompleted = { viewModel.deleteCompletedReminders() }
             )
         }
         is Screen.Editor -> {

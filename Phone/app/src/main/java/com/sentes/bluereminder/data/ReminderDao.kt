@@ -30,4 +30,7 @@ interface ReminderDao {
 
     @Delete
     suspend fun deleteReminder(reminder: Reminder)
+
+    @Query("DELETE FROM reminders WHERE isCompleted = 1")
+    suspend fun deleteCompletedReminders()
 }

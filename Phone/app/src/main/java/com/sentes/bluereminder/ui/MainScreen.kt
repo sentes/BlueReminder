@@ -23,6 +23,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.TextButton
+import androidx.compose.ui.graphics.Color
 import com.sentes.bluereminder.MainTab
 import com.sentes.bluereminder.ReminderGroup
 import com.sentes.bluereminder.data.Reminder
@@ -41,9 +45,34 @@ fun MainScreen(
     onToggleReminder: (Reminder) -> Unit,
     onPostponeReminder: (Reminder, Long) -> Unit,
     onExportJson: () -> Unit,
-    onImportJson: () -> Unit
+    onImportJson: () -> Unit,
+    onDeleteCompleted: () -> Unit
 ) {
     var showMenu by remember { mutableStateOf(false) }
+    var showDeleteDialog by remember { mutableStateOf(false) }
+
+    if (showDeleteDialog) {
+        AlertDialog(
+            onDismissRequest = { showDeleteDialog = false },
+            title = { Text("Usuń zakończone") },
+            text = { Text("Czy na pewno chcesz usunąć wszystkie zakończone powiadomienia?") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        onDeleteCompleted()
+                        showDeleteDialog = false
+                    }
+                ) {
+                    Text("Usuń", color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteDialog = false }) {
+                    Text("Anuluj")
+                }
+            }
+        )
+    }
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
@@ -58,6 +87,13 @@ fun MainScreen(
                         expanded = showMenu,
                         onDismissRequest = { showMenu = false }
                     ) {
+                        DropdownMenuItem(
+                            text = { Text("Usuń zakończone") },
+                            onClick = {
+                                showMenu = false
+                                showDeleteDialog = true
+                            }
+                        )
                         DropdownMenuItem(
                             text = { Text("Eksportuj do JSON") },
                             onClick = {
