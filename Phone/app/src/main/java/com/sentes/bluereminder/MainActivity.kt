@@ -81,7 +81,8 @@ class MainActivity : ComponentActivity() {
 enum class ReminderGroup(val title: String) {
     Today("Dziś"),
     Tomorrow("Jutro"),
-    Later("Później")
+    Later("Później"),
+    Completed("Zakończone")
 }
 
 sealed class Screen {

@@ -134,7 +134,7 @@ fun MainScreen(
             when (selectedTab) {
                 MainTab.Reminders -> {
                     val groupedReminders = remember(reminders) {
-                        reminders.groupBy { getReminderGroup(it.reminderTime) }
+                        reminders.groupBy { getReminderGroup(it) }
                             .toSortedMap(compareBy { it.ordinal })
                     }
                     ReminderListContent(
@@ -161,8 +161,10 @@ fun MainScreen(
     }
 }
 
-private fun getReminderGroup(reminderTime: Long?): ReminderGroup {
-    if (reminderTime == null) return ReminderGroup.Later
+private fun getReminderGroup(reminder: Reminder): ReminderGroup {
+    if (reminder.isCompleted) return ReminderGroup.Completed
+    
+    val reminderTime = reminder.reminderTime ?: return ReminderGroup.Later
 
     val reminderDate = Instant.ofEpochMilli(reminderTime)
         .atZone(ZoneId.systemDefault())
