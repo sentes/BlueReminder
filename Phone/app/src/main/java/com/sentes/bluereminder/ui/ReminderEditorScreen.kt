@@ -34,12 +34,15 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.unit.dp
@@ -56,6 +59,14 @@ fun ReminderEditorScreen(
     onDelete: () -> Unit
 ) {
     val focusManager = LocalFocusManager.current
+    val titleFocusRequester = remember { FocusRequester() }
+
+    LaunchedEffect(reminder) {
+        if (reminder == null) {
+            titleFocusRequester.requestFocus()
+        }
+    }
+
     // Event Time States
     val eventCalendar = remember(reminder) {
         Calendar.getInstance().apply {
@@ -214,7 +225,9 @@ fun ReminderEditorScreen(
                 value = title,
                 onValueChange = { title = it },
                 label = { Text("Tytuł") },
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .focusRequester(titleFocusRequester)
             )
             Spacer(modifier = Modifier.height(16.dp))
             TextField(
