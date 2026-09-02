@@ -22,7 +22,6 @@ import androidx.compose.ui.unit.dp
 import com.sentes.bluereminder.data.Reminder
 import java.text.SimpleDateFormat
 import java.time.Instant
-import java.time.LocalDate
 import java.time.ZoneId
 import java.util.Date
 import java.util.Locale
@@ -30,11 +29,12 @@ import java.util.Locale
 @Composable
 fun ReminderItem(
     reminder: Reminder,
+    currentTime: Long,
     onToggle: () -> Unit,
     onEdit: () -> Unit,
     onPostpone: (Long) -> Unit
 ) {
-    val isOverdue = !reminder.isCompleted && reminder.reminderTime != null && reminder.reminderTime < System.currentTimeMillis()
+    val isOverdue = !reminder.isCompleted && reminder.reminderTime != null && reminder.reminderTime < currentTime
     
     Card(
         modifier = Modifier
@@ -83,11 +83,13 @@ fun ReminderItem(
 
                     Column(modifier = Modifier.padding(top = 4.dp)) {
                         reminder.eventTime?.let { time ->
-                            val dateStr = remember(time) {
+                            val dateStr = remember(time, currentTime) {
                                 val eventDate = Instant.ofEpochMilli(time)
                                     .atZone(ZoneId.systemDefault())
                                     .toLocalDate()
-                                val today = LocalDate.now()
+                                val today = Instant.ofEpochMilli(currentTime)
+                                    .atZone(ZoneId.systemDefault())
+                                    .toLocalDate()
                                 val tomorrow = today.plusDays(1)
 
                                 val timeStr = SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date(time))
@@ -106,11 +108,13 @@ fun ReminderItem(
                         }
 
                         reminder.reminderTime?.let { time ->
-                            val dateStr = remember(time) {
+                            val dateStr = remember(time, currentTime) {
                                 val reminderDate = Instant.ofEpochMilli(time)
                                     .atZone(ZoneId.systemDefault())
                                     .toLocalDate()
-                                val today = LocalDate.now()
+                                val today = Instant.ofEpochMilli(currentTime)
+                                    .atZone(ZoneId.systemDefault())
+                                    .toLocalDate()
                                 val tomorrow = today.plusDays(1)
 
                                 val timeStr = SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date(time))

@@ -29,6 +29,9 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.sentes.bluereminder.data.Reminder
 import com.sentes.bluereminder.service.MainForegroundService
@@ -101,8 +104,22 @@ enum class MainTab(val title: String, val icon: androidx.compose.ui.graphics.vec
 @Composable
 fun ReminderApp(viewModel: ReminderViewModel = viewModel()) {
     val context = LocalContext.current
+    val lifecycleOwner = LocalLifecycleOwner.current
     var currentScreen by remember { mutableStateOf<Screen>(Screen.List) }
     var selectedTab by remember { mutableStateOf(MainTab.Reminders) }
+    var currentTime by remember { mutableLongStateOf(System.currentTimeMillis()) }
+
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                currentTime = System.currentTimeMillis()
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
 
     val exportLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.CreateDocument("application/json")
@@ -131,6 +148,7 @@ fun ReminderApp(viewModel: ReminderViewModel = viewModel()) {
         is Screen.List -> {
             MainScreen(
                 reminders = reminders,
+                currentTime = currentTime,
                 selectedTab = selectedTab,
                 onTabSelected = { selectedTab = it },
                 onAddReminder = { currentScreen = Screen.Editor() },

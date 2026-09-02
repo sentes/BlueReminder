@@ -38,6 +38,7 @@ import java.time.ZoneId
 @Composable
 fun MainScreen(
     reminders: List<Reminder>,
+    currentTime: Long,
     selectedTab: MainTab,
     onTabSelected: (MainTab) -> Unit,
     onAddReminder: () -> Unit,
@@ -139,6 +140,7 @@ fun MainScreen(
                     }
                     ReminderListContent(
                         groupedReminders = groupedReminders,
+                        currentTime = currentTime,
                         onToggleReminder = onToggleReminder,
                         onEditReminder = onEditReminder,
                         onPostponeReminder = onPostponeReminder
@@ -151,6 +153,7 @@ fun MainScreen(
                     }
                     ReminderCalendarContent(
                         reminders = calendarReminders,
+                        currentTime = currentTime,
                         onToggleReminder = onToggleReminder,
                         onEditReminder = onEditReminder,
                         onPostponeReminder = onPostponeReminder

@@ -28,6 +28,7 @@ import kotlin.collections.forEach
 @Composable
 fun ReminderListContent(
     groupedReminders: Map<ReminderGroup, List<Reminder>>,
+    currentTime: Long,
     onToggleReminder: (Reminder) -> Unit,
     onEditReminder: (Reminder) -> Unit,
     onPostponeReminder: (Reminder, Long) -> Unit
@@ -58,6 +59,7 @@ fun ReminderListContent(
                 items(remindersInGroup, key = { it.id }) { reminder ->
                     ReminderItem(
                         reminder = reminder,
+                        currentTime = currentTime,
                         onToggle = { onToggleReminder(reminder) },
                         onEdit = { onEditReminder(reminder) },
                         onPostpone = { duration -> onPostponeReminder(reminder, duration) }
