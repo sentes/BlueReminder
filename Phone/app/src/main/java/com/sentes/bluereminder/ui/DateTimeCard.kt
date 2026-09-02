@@ -21,6 +21,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import java.text.SimpleDateFormat
+import java.time.Instant
+import java.time.LocalDate
+import java.time.ZoneId
 import java.util.Date
 import java.util.Locale
 
@@ -36,6 +39,20 @@ fun DateTimeCard(
     onClearClick: () -> Unit,
     onSnoozeClick: (Long) -> Unit
 ) {
+    val dateText = date?.let {
+        val selectedDate = Instant.ofEpochMilli(it)
+            .atZone(ZoneId.systemDefault())
+            .toLocalDate()
+        val today = LocalDate.now()
+        val tomorrow = today.plusDays(1)
+
+        when {
+            selectedDate.isEqual(today) -> "Dziś"
+            selectedDate.isEqual(tomorrow) -> "Jutro"
+            else -> SimpleDateFormat("dd MMM, yyyy", Locale.getDefault()).format(Date(it))
+        }
+    } ?: "Nie ustawiono"
+
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
@@ -49,9 +66,7 @@ fun DateTimeCard(
                 Column {
                     Text("Data", style = MaterialTheme.typography.labelLarge)
                     Text(
-                        text = date?.let {
-                            SimpleDateFormat("MMM dd, yyyy", Locale.getDefault()).format(Date(it))
-                        } ?: "Nie ustawiono",
+                        text = dateText,
                         style = MaterialTheme.typography.bodyLarge
                     )
                 }
