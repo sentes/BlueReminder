@@ -31,7 +31,8 @@ object RemindersStateFlow {
             }
 
             val today = LocalDate.now()
-            if (updatedReminder.reminderTime?.toLocalDate()?.isEqual(today) != true) {
+            if (updatedReminder.reminderTime?.toLocalDate()?.isEqual(today) != true
+                && updatedReminder.recurrenceType == "None") {
                 mutableList.remove(updatedReminder)
             }
 

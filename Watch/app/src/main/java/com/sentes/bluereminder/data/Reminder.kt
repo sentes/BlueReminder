@@ -9,5 +9,9 @@ data class Reminder(
     val reminderTime: LocalDateTime?,
     val eventTime: LocalDateTime?,
     val isCompleted: Boolean = false,
-    val recurrenceType: String
-)
+    val recurrenceType: String = "None"
+) {
+    fun isCompletedOrRecurringAndNotToday(): Boolean {
+        return isCompleted || (recurrenceType != "None" && reminderTime?.toLocalDate() != LocalDateTime.now().toLocalDate())
+    }
+}

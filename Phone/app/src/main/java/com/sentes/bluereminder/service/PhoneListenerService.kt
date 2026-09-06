@@ -38,8 +38,9 @@ class PhoneListenerService : WearableListenerService() {
                     val reminderJson = String(messageEvent.data, Charsets.UTF_8)
                     val reminderObject = JSONObject(reminderJson)
                     val title = reminderObject.getString("title")
-                    val reminderTime = if (reminderObject.has("reminderTime")) reminderObject.getLong("reminderTime") else null
-                    
+                    val reminderTime =
+                        if (reminderObject.has("reminderTime")) reminderObject.getLong("reminderTime") else null
+
                     val reminder = Reminder(
                         title = title,
                         reminderTime = reminderTime
@@ -54,8 +55,7 @@ class PhoneListenerService : WearableListenerService() {
                         )
                         .addOnSuccessListener { Log.d(TAG, "Reminders sent to wearable") }
                         .addOnFailureListener { Log.e(TAG, "Reply failed", it) }
-                }
-                catch (e: Exception) {
+                } catch (e: Exception) {
                     Log.e(TAG, "Error parsing or inserting reminder JSON", e)
                 }
             }
@@ -73,7 +73,8 @@ class PhoneListenerService : WearableListenerService() {
                         if (reminder != null) {
                             val baseTime = reminder.reminderTime ?: System.currentTimeMillis()
                             val newTime = baseTime + (60 * 60 * 1000) * durationHours
-                            val updatedReminder = reminder.copy(reminderTime = newTime, isCompleted = false)
+                            val updatedReminder =
+                                reminder.copy(reminderTime = newTime, isCompleted = false)
                             repository.update(updatedReminder)
                             Log.d(TAG, "Reminder $reminderId snoozed by $durationHours hours")
 
@@ -86,42 +87,65 @@ class PhoneListenerService : WearableListenerService() {
                                 put("eventTime", updatedReminder.eventTime)
                                 put("recurrenceType", updatedReminder.recurrenceType)
                             }
-                            
+
                             Wearable.getMessageClient(this@PhoneListenerService)
                                 .sendMessage(
                                     messageEvent.sourceNodeId, "/reminder/response_snooze",
                                     jsonObject.toString().toByteArray()
                                 )
-                                .addOnSuccessListener { Log.d(TAG, "Updated reminder sent to wearable") }
-                                .addOnFailureListener { Log.e(TAG, "Failed to send snooze response", it) }
+                                .addOnSuccessListener {
+                                    Log.d(
+                                        TAG,
+                                        "Updated reminder sent to wearable"
+                                    )
+                                }
+                                .addOnFailureListener {
+                                    Log.e(
+                                        TAG,
+                                        "Failed to send snooze response",
+                                        it
+                                    )
+                                }
                         }
                     }
                 } catch (e: Exception) {
                     Log.e(TAG, "Error snoozing reminder", e)
                 }
             }
-        }
-        else if (messageEvent.path == "/reminder/toggle_dismiss") {
+        } else if (messageEvent.path == "/reminder/toggle_dismiss") {
             serviceScope.launch {
                 try {
                     val reminderId = String(messageEvent.data, Charsets.UTF_8).toLongOrNull()
                     if (reminderId != null) {
                         val reminder = repository.getReminderById(reminderId)
-                        if (reminder != null) {
-                            val updatedReminder = if (!reminder.isCompleted && reminder.recurrenceType != "None") {
-                                // If marking a recurring reminder as completed, schedule next occurrence
-                                val nextReminderTime = reminder.reminderTime?.let { calculateNextRecurrence(it, reminder.recurrenceType) }
-                                val nextEventTime = reminder.eventTime?.let { calculateNextRecurrence(it, reminder.recurrenceType) }
-                                
-                                reminder.copy(
-                                    reminderTime = nextReminderTime,
-                                    eventTime = nextEventTime,
-                                    isCompleted = false // Keep it active for the next occurrence
-                                )
-                            } else {
-                                reminder.copy(isCompleted = !reminder.isCompleted)
-                            }
-                            
+                        if (reminder != null && reminder.reminderTime != null) {
+                            val updatedReminder =
+                                if (reminder.recurrenceType != "None") {
+                                    val today = LocalDate.now()
+                                    val cal = Calendar.getInstance().apply { timeInMillis = reminder.reminderTime }
+                                    val isToday = cal.toInstant().atZone(ZoneId.systemDefault()).toLocalDate().isEqual(today)
+                                    val nextReminderTime = calculateNextOrPreviousRecurrence(
+                                        reminder.reminderTime,
+                                        reminder.recurrenceType,
+                                        isToday
+                                    )
+                                    val nextEventTime = reminder.eventTime?.let {
+                                        calculateNextOrPreviousRecurrence(
+                                            it,
+                                            reminder.recurrenceType,
+                                            isToday
+                                        )
+                                    }
+
+                                    reminder.copy(
+                                        reminderTime = nextReminderTime,
+                                        eventTime = nextEventTime,
+                                        isCompleted = false
+                                    )
+                                } else {
+                                    reminder.copy(isCompleted = !reminder.isCompleted)
+                                }
+
                             repository.update(updatedReminder)
                             Log.d(TAG, "Reminder $reminderId toggled (dismissed/recurring)")
 
@@ -141,16 +165,26 @@ class PhoneListenerService : WearableListenerService() {
                                     messageEvent.sourceNodeId, "/reminder/response_toggle_dismiss",
                                     jsonObject.toString().toByteArray()
                                 )
-                                .addOnSuccessListener { Log.d(TAG, "Updated reminder sent to wearable") }
-                                .addOnFailureListener { Log.e(TAG, "Failed to send snooze response", it) }
+                                .addOnSuccessListener {
+                                    Log.d(
+                                        TAG,
+                                        "Updated reminder sent to wearable"
+                                    )
+                                }
+                                .addOnFailureListener {
+                                    Log.e(
+                                        TAG,
+                                        "Failed to send snooze response",
+                                        it
+                                    )
+                                }
                         }
                     }
                 } catch (e: Exception) {
                     Log.e(TAG, "Error toggling reminder", e)
                 }
             }
-        }
-        else if (messageEvent.path == "/reminder/get_today") {
+        } else if (messageEvent.path == "/reminder/get_today") {
             serviceScope.launch {
                 try {
                     Wearable.getMessageClient(this@PhoneListenerService)
@@ -191,13 +225,18 @@ class PhoneListenerService : WearableListenerService() {
         return jsonArray.toString()
     }
 
-    private fun calculateNextRecurrence(currentTime: Long, type: String): Long {
+    private fun calculateNextOrPreviousRecurrence(
+        currentTime: Long,
+        type: String,
+        isNext: Boolean
+    ): Long {
         val cal = Calendar.getInstance().apply { timeInMillis = currentTime }
+        val value = if (isNext) 1 else -1;
         when (type) {
-            "Daily" -> cal.add(Calendar.DAY_OF_YEAR, 1)
-            "Weekly" -> cal.add(Calendar.WEEK_OF_YEAR, 1)
-            "Monthly" -> cal.add(Calendar.MONTH, 1)
-            "Yearly" -> cal.add(Calendar.YEAR, 1)
+            "Daily" -> cal.add(Calendar.DAY_OF_YEAR, value)
+            "Weekly" -> cal.add(Calendar.WEEK_OF_YEAR, value)
+            "Monthly" -> cal.add(Calendar.MONTH, value)
+            "Yearly" -> cal.add(Calendar.YEAR, value)
         }
         return cal.timeInMillis
     }

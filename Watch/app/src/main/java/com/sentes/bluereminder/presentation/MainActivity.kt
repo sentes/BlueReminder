@@ -278,7 +278,7 @@ fun TransformingLazyColumnItemScope.ReminderItem(
             .fillMaxWidth()
             .transformedHeight(this, transformationSpec)
             .padding(vertical = 2.dp)
-            .alpha(if (reminder.isCompleted) 0.75f else 1f),
+            .alpha(if (reminder.isCompletedOrRecurringAndNotToday()) 0.75f else 1f),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Button(
@@ -286,7 +286,7 @@ fun TransformingLazyColumnItemScope.ReminderItem(
             modifier = Modifier.weight(1f),
             transformation = SurfaceTransformation(transformationSpec),
             colors = when {
-                reminder.isCompleted -> ButtonDefaults.buttonColors(
+                reminder.isCompletedOrRecurringAndNotToday() -> ButtonDefaults.buttonColors(
                     containerColor = MaterialTheme.colorScheme.surfaceContainer,
                     contentColor = MaterialTheme.colorScheme.onSurface,
                     disabledContainerColor = MaterialTheme.colorScheme.surfaceContainer,
@@ -308,14 +308,14 @@ fun TransformingLazyColumnItemScope.ReminderItem(
                     Text(
                         text = reminder.eventTime.format(dateTimeFormatter) ?: "",
                         style = MaterialTheme.typography.bodySmall,
-                        textDecoration = if (reminder.isCompleted) TextDecoration.LineThrough else null
+                        textDecoration = if (reminder.isCompletedOrRecurringAndNotToday()) TextDecoration.LineThrough else null
                     )
                 }
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
                         text = reminder.title,
                         style = MaterialTheme.typography.titleMedium,
-                        textDecoration = if (reminder.isCompleted) TextDecoration.LineThrough else null,
+                        textDecoration = if (reminder.isCompletedOrRecurringAndNotToday()) TextDecoration.LineThrough else null,
                         modifier = Modifier.weight(1f, fill = false)
                     )
                     if (reminder.recurrenceType != "None") {
@@ -331,10 +331,10 @@ fun TransformingLazyColumnItemScope.ReminderItem(
                     text = reminder.reminderTime?.format(timeFormatter) ?: "",
                     style = MaterialTheme.typography.bodySmall,
                     color = when {
-                        isOverdue || reminder.isCompleted -> Color.White
+                        isOverdue || reminder.isCompletedOrRecurringAndNotToday() -> Color.White
                         else -> Color.Blue
                     },
-                    textDecoration = if (reminder.isCompleted) TextDecoration.LineThrough else null,
+                    textDecoration = if (reminder.isCompletedOrRecurringAndNotToday()) TextDecoration.LineThrough else null,
                 )
             }
         }
@@ -345,7 +345,7 @@ fun TransformingLazyColumnItemScope.ReminderItem(
             onClick = onSnooze,
             modifier = Modifier.size(width = 52.dp, height = 52.dp),
             transformation = SurfaceTransformation(transformationSpec),
-            enabled = !reminder.isCompleted,
+            enabled = !reminder.isCompletedOrRecurringAndNotToday(),
             colors = ButtonDefaults.buttonColors(
                 containerColor = MaterialTheme.colorScheme.tertiaryContainer,
                 contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
