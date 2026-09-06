@@ -1,17 +1,23 @@
-# Walkthrough - Use Snooze Icon
+# Walkthrough - Loading State for Individual Reminders
 
-I have replaced the "+" text with a standard snooze icon for a better visual representation of the snooze action.
+I have added a loading indicator that appears on a specific reminder when it is being updated (e.g., when snoozing or toggling completion).
 
 ## Changes
 
-### Build Configuration
-- [MODIFY] [libs.versions.toml](file:///C:/git/BlueReminder/Watch/gradle/libs.versions.toml): Added `androidx.compose.material:material-icons-extended` dependency.
-- [MODIFY] [build.gradle.kts](file:///C:/git/BlueReminder/Watch/app/build.gradle.kts): Included the `material-icons-extended` library.
+### Data Layer
+- [MODIFY] [RemindersStateFlow.kt](file:///C:/git/BlueReminder/Watch/app/src/main/java/com/sentes/bluereminder/data/RemindersStateFlow.kt):
+    - Added `beingLoadedReminderId` to track which reminder is currently waiting for an update from the phone.
+    - Updated `updateSingleReminder` to automatically clear the loading state when the update is received.
+
+### UI Logic Layer
+- [MODIFY] [MainViewModel.kt](file:///C:/git/BlueReminder/Watch/app/src/main/java/com/sentes/bluereminder/presentation/MainViewModel.kt):
+    - Set the `beingLoadedReminderId` before sending snooze or toggle requests to the phone.
+    - Added error handling to clear the loading state if the request fails.
 
 ### UI Layer
 - [MODIFY] [MainActivity.kt](file:///C:/git/BlueReminder/Watch/app/src/main/java/com/sentes/bluereminder/presentation/MainActivity.kt):
-    - Replaced `Text("+", ...)` with `Icon(Icons.Default.Snooze, ...)` in the `ReminderItem`.
-    - Added necessary imports for Material Icons.
+    - Updated `ReminderItem` to show a `CircularProgressIndicator` inside the button if it is currently "being changed".
+    - Adjusted the layout of the reminder button to accommodate the progress indicator on the right side.
 
 ## Verification Results
 
@@ -20,5 +26,5 @@ I have replaced the "+" text with a standard snooze icon for a better visual rep
 
 ## How to Test
 1. Launch the app on your Wear OS device.
-2. Observe the snooze button on the right side of each reminder.
-3. It should now show a clock with a snooze (Zzz) icon instead of a simple plus sign.
+2. Tap on a reminder to complete it or use the snooze icon.
+3. You should see a small loading spinner appear on the right side of the reminder button until the phone app responds with the updated state.

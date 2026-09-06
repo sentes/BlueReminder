@@ -17,6 +17,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     
     val reminders: StateFlow<List<Reminder>> = RemindersStateFlow.reminders
     val isLoading = RemindersStateFlow.isLoading
+    val beingLoadedReminderId = RemindersStateFlow.beingLoadedReminderId
 
     fun refreshReminders() {
         viewModelScope.launch {
@@ -31,20 +32,22 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     fun snoozeReminder(reminder: Reminder, durationHours: Int) {
         viewModelScope.launch {
+            RemindersStateFlow.updateBeingLoadedReminderId(reminder.id)
             try {
                 phoneService.snoozeReminder(reminder.id, durationHours)
             } catch (e: Exception) {
-                // Handle error
+                RemindersStateFlow.updateBeingLoadedReminderId(null)
             }
         }
     }
 
     fun toggleDismissReminder(reminder: Reminder) {
         viewModelScope.launch {
+            RemindersStateFlow.updateBeingLoadedReminderId(reminder.id)
             try {
                 phoneService.toggleDismissReminder(reminder.id)
             } catch (e: Exception) {
-                // Handle error
+                RemindersStateFlow.updateBeingLoadedReminderId(null)
             }
         }
     }

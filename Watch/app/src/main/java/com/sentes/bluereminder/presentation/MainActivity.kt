@@ -74,6 +74,7 @@ class MainActivity : ComponentActivity() {
 fun WearApp(viewModel: MainViewModel) {
     val reminders by viewModel.reminders.collectAsStateWithLifecycle()
     val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
+    val beingLoadedReminderId by viewModel.beingLoadedReminderId.collectAsStateWithLifecycle()
     var snoozeTarget by remember { mutableStateOf<Reminder?>(null) }
 
     val inputTextKey = "reminder_title"
@@ -141,6 +142,7 @@ fun WearApp(viewModel: MainViewModel) {
                                     ReminderItem(
                                         reminder,
                                         transformationSpec,
+                                        isBeingLoaded = beingLoadedReminderId == reminder.id,
                                         onSnooze = { snoozeTarget = reminder },
                                         onDismiss = { viewModel.toggleDismissReminder(reminder) }
                                     )
@@ -265,6 +267,7 @@ fun WearApp(viewModel: MainViewModel) {
 fun TransformingLazyColumnItemScope.ReminderItem(
     reminder: Reminder,
     transformationSpec: TransformationSpec,
+    isBeingLoaded: Boolean,
     onSnooze: () -> Unit,
     onDismiss: () -> Unit
 ) {
@@ -302,7 +305,7 @@ fun TransformingLazyColumnItemScope.ReminderItem(
             }
         ) {
             Column(modifier = Modifier
-                .fillMaxWidth()
+                .weight(1f)
                 .padding(4.dp)) {
                 if (reminder.eventTime != null) {
                     Text(
@@ -335,6 +338,16 @@ fun TransformingLazyColumnItemScope.ReminderItem(
                         else -> Color.Blue
                     },
                     textDecoration = if (reminder.isCompletedOrRecurringAndNotToday()) TextDecoration.LineThrough else null,
+                )
+            }
+
+            if (isBeingLoaded) {
+                CircularProgressIndicator(
+                    modifier = Modifier
+                        .size(24.dp)
+                        .align(Alignment.CenterVertically)
+                        .padding(start = 8.dp),
+                    strokeWidth = 2.dp
                 )
             }
         }

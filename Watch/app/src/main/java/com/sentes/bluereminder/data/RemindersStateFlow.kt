@@ -11,9 +11,15 @@ object RemindersStateFlow {
     val reminders: StateFlow<List<Reminder>> = _reminders.asStateFlow()
     private val _isLoading = MutableStateFlow(true)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
+    private val _beingLoadedReminderId = MutableStateFlow<String?>(null)
+    val beingLoadedReminderId: StateFlow<String?> = _beingLoadedReminderId.asStateFlow()
 
     fun updateIsLoading(newIsLoading: Boolean) {
         _isLoading.value = newIsLoading
+    }
+
+    fun updateBeingLoadedReminderId(reminderId: String?) {
+        _beingLoadedReminderId.value = reminderId
     }
 
     fun updateReminders(newList: List<Reminder>) {
@@ -21,6 +27,9 @@ object RemindersStateFlow {
     }
 
     fun updateSingleReminder(updatedReminder: Reminder) {
+        if (_beingLoadedReminderId.value == updatedReminder.id) {
+            _beingLoadedReminderId.value = null
+        }
         _reminders.update { current ->
             val mutableList = current.toMutableList()
             val index = mutableList.indexOfFirst { it.id == updatedReminder.id }
