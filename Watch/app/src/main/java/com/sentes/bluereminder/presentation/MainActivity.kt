@@ -47,11 +47,10 @@ import androidx.wear.compose.material3.Text
 import androidx.wear.compose.material3.Icon
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Snooze
+import androidx.compose.material.icons.filled.Repeat
 import androidx.wear.compose.material3.lazy.TransformationSpec
 import androidx.wear.compose.material3.lazy.rememberTransformationSpec
 import androidx.wear.compose.material3.lazy.transformedHeight
-import androidx.wear.compose.ui.tooling.preview.WearPreviewDevices
-import androidx.wear.compose.ui.tooling.preview.WearPreviewFontScales
 import androidx.wear.input.RemoteInputIntentHelper
 import android.app.RemoteInput
 import androidx.compose.ui.graphics.Color
@@ -312,11 +311,22 @@ fun TransformingLazyColumnItemScope.ReminderItem(
                         textDecoration = if (reminder.isCompleted) TextDecoration.LineThrough else null
                     )
                 }
-                Text(
-                    text = reminder.title,
-                    style = MaterialTheme.typography.titleMedium,
-                    textDecoration = if (reminder.isCompleted) TextDecoration.LineThrough else null
-                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = reminder.title,
+                        style = MaterialTheme.typography.titleMedium,
+                        textDecoration = if (reminder.isCompleted) TextDecoration.LineThrough else null,
+                        modifier = Modifier.weight(1f, fill = false)
+                    )
+                    if (reminder.recurrenceType != "None") {
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Icon(
+                            imageVector = Icons.Default.Repeat,
+                            contentDescription = "Recurring",
+                            modifier = Modifier.size(14.dp),
+                        )
+                    }
+                }
                 Text(
                     text = reminder.reminderTime?.format(timeFormatter) ?: "",
                     style = MaterialTheme.typography.bodySmall,
