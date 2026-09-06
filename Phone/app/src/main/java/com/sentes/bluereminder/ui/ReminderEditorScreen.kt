@@ -1,6 +1,7 @@
 package com.sentes.bluereminder.ui
 
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
@@ -21,6 +22,8 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -46,6 +49,7 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.unit.dp
+import com.sentes.bluereminder.data.RecurrenceType
 import com.sentes.bluereminder.data.Reminder
 import java.util.Calendar
 
@@ -55,7 +59,7 @@ import java.util.Calendar
 fun ReminderEditorScreen(
     reminder: Reminder? = null,
     onDismiss: () -> Unit,
-    onConfirm: (String, String, Long?, Long?) -> Unit,
+    onConfirm: (String, String, Long?, Long?, String) -> Unit,
     onDelete: () -> Unit
 ) {
     val focusManager = LocalFocusManager.current
@@ -127,6 +131,8 @@ fun ReminderEditorScreen(
 
     var title by remember { mutableStateOf(reminder?.title ?: "") }
     var description by remember { mutableStateOf(reminder?.description ?: "") }
+    var recurrenceType by remember { mutableStateOf(reminder?.recurrenceType ?: "None") }
+    var recurrenceMenuExpanded by remember { mutableStateOf(false) }
 
     var showEventDatePicker by remember { mutableStateOf(false) }
     var showEventTimePicker by remember { mutableStateOf(false) }
@@ -193,7 +199,7 @@ fun ReminderEditorScreen(
                             }.timeInMillis
                         } else null
 
-                        onConfirm(title, description, finalReminderTime, finalEventTime)
+                        onConfirm(title, description, finalReminderTime, finalEventTime, recurrenceType)
                     },
                     modifier = Modifier.fillMaxWidth(),
                     enabled = title.isNotBlank(),
@@ -279,6 +285,39 @@ fun ReminderEditorScreen(
                     hasReminderTime = true
                 }
             )
+            Spacer(modifier = Modifier.height(8.dp))
+            Text("Powtarzanie", style = MaterialTheme.typography.titleMedium)
+            Spacer(modifier = Modifier.height(8.dp))
+            Box {
+                Button(
+                    onClick = {
+                        focusManager.clearFocus()
+                        recurrenceMenuExpanded = true
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                        contentColor = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                ) {
+                    Text(RecurrenceType.entries.find { it.name == recurrenceType }?.title ?: "Brak")
+                }
+                DropdownMenu(
+                    expanded = recurrenceMenuExpanded,
+                    onDismissRequest = { recurrenceMenuExpanded = false },
+                    modifier = Modifier.fillMaxWidth(0.9f)
+                ) {
+                    RecurrenceType.entries.forEach { type ->
+                        DropdownMenuItem(
+                            text = { Text(type.title) },
+                            onClick = {
+                                recurrenceType = type.name
+                                recurrenceMenuExpanded = false
+                            }
+                        )
+                    }
+                }
+            }
 
             Spacer(modifier = Modifier.height(24.dp))
 

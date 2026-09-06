@@ -167,11 +167,11 @@ fun ReminderApp(viewModel: ReminderViewModel = viewModel()) {
             ReminderEditorScreen(
                 reminder = screen.reminder,
                 onDismiss = { currentScreen = Screen.List },
-                onConfirm = { title, desc, reminderTime, eventTime ->
+                onConfirm = { title, desc, reminderTime, eventTime, recurrenceType ->
                     if (screen.reminder == null) {
-                        viewModel.addReminder(title, desc, reminderTime, eventTime)
+                        viewModel.addReminder(title, desc, reminderTime, eventTime, recurrenceType)
                     } else {
-                        viewModel.updateReminder(screen.reminder, title, desc, reminderTime, eventTime)
+                        viewModel.updateReminder(screen.reminder, title, desc, reminderTime, eventTime, recurrenceType)
                     }
                     currentScreen = Screen.List
                 },

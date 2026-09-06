@@ -5,11 +5,15 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.width
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Repeat
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -67,12 +71,24 @@ fun ReminderItem(
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 Column {
-                    Text(
-                        text = reminder.title,
-                        style = MaterialTheme.typography.titleMedium,
-                        textDecoration = if (reminder.isCompleted) TextDecoration.LineThrough else null,
-                        color = if (reminder.isCompleted) Color.Gray else Color.Unspecified
-                    )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            text = reminder.title,
+                            style = MaterialTheme.typography.titleMedium,
+                            textDecoration = if (reminder.isCompleted) TextDecoration.LineThrough else null,
+                            color = if (reminder.isCompleted) Color.Gray else Color.Unspecified,
+                            modifier = Modifier.weight(1f, fill = false)
+                        )
+                        if (reminder.recurrenceType != "None") {
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Icon(
+                                imageVector = Icons.Default.Repeat,
+                                contentDescription = "Powtarzalne",
+                                modifier = Modifier.size(14.dp),
+                                tint = if (reminder.isCompleted) Color.Gray else MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    }
                     if (reminder.description.isNotBlank()) {
                         Text(
                             text = reminder.description,

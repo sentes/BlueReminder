@@ -6,12 +6,14 @@ import androidx.lifecycle.viewModelScope
 import com.sentes.bluereminder.data.Reminder
 import com.sentes.bluereminder.data.ReminderDatabase
 import com.sentes.bluereminder.data.ReminderRepository
+import com.sentes.bluereminder.data.RecurrenceType
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import org.json.JSONArray
 import org.json.JSONObject
+import java.util.Calendar
 
 class ReminderViewModel(application: Application) : AndroidViewModel(application) {
     private val repository: ReminderRepository
@@ -27,23 +29,52 @@ class ReminderViewModel(application: Application) : AndroidViewModel(application
         )
     }
 
-    fun addReminder(title: String, description: String = "", reminderTime: Long? = null, eventTime: Long? = null) {
+    fun addReminder(title: String, description: String = "", reminderTime: Long? = null, eventTime: Long? = null, recurrenceType: String = "None") {
         if (title.isBlank()) return
         viewModelScope.launch {
-            repository.insert(Reminder(title = title, description = description, reminderTime = reminderTime, eventTime = eventTime))
+            repository.insert(Reminder(title = title, description = description, reminderTime = reminderTime, eventTime = eventTime, recurrenceType = recurrenceType))
         }
     }
 
     fun toggleReminderCompletion(reminder: Reminder) {
         viewModelScope.launch {
-            repository.update(reminder.copy(isCompleted = !reminder.isCompleted))
+            if (!reminder.isCompleted && reminder.recurrenceType != "None") {
+                // If marking a recurring reminder as completed, schedule next occurrence
+                val nextReminderTime = reminder.reminderTime?.let { calculateNextRecurrence(it, reminder.recurrenceType) }
+                val nextEventTime = reminder.eventTime?.let { calculateNextRecurrence(it, reminder.recurrenceType) }
+                
+                repository.update(reminder.copy(
+                    reminderTime = nextReminderTime,
+                    eventTime = nextEventTime,
+                    isCompleted = false // Keep it active for the next occurrence
+                ))
+            } else {
+                repository.update(reminder.copy(isCompleted = !reminder.isCompleted))
+            }
         }
     }
 
-    fun updateReminder(reminder: Reminder, title: String, description: String, reminderTime: Long?, eventTime: Long? = null) {
+    private fun calculateNextRecurrence(currentTime: Long, type: String): Long {
+        val cal = Calendar.getInstance().apply { timeInMillis = currentTime }
+        when (type) {
+            "Daily" -> cal.add(Calendar.DAY_OF_YEAR, 1)
+            "Weekly" -> cal.add(Calendar.WEEK_OF_YEAR, 1)
+            "Monthly" -> cal.add(Calendar.MONTH, 1)
+            "Yearly" -> cal.add(Calendar.YEAR, 1)
+        }
+        return cal.timeInMillis
+    }
+
+    fun updateReminder(reminder: Reminder, title: String, description: String, reminderTime: Long?, eventTime: Long? = null, recurrenceType: String = "None") {
         if (title.isBlank()) return
         viewModelScope.launch {
-            repository.update(reminder.copy(title = title, description = description, reminderTime = reminderTime, eventTime = eventTime))
+            repository.update(reminder.copy(
+                title = title, 
+                description = description, 
+                reminderTime = reminderTime, 
+                eventTime = eventTime,
+                recurrenceType = recurrenceType
+            ))
         }
     }
 
@@ -77,6 +108,7 @@ class ReminderViewModel(application: Application) : AndroidViewModel(application
                 put("isCompleted", reminder.isCompleted)
                 put("reminderTime", reminder.reminderTime ?: JSONObject.NULL)
                 put("eventTime", reminder.eventTime ?: JSONObject.NULL)
+                put("recurrenceType", reminder.recurrenceType)
             }
             jsonArray.put(jsonObject)
         }
@@ -94,7 +126,8 @@ class ReminderViewModel(application: Application) : AndroidViewModel(application
                         description = jsonObject.optString("description", ""),
                         isCompleted = jsonObject.optBoolean("isCompleted", false),
                         reminderTime = if (jsonObject.isNull("reminderTime")) null else jsonObject.getLong("reminderTime"),
-                        eventTime = if (jsonObject.isNull("eventTime")) null else jsonObject.getLong("eventTime")
+                        eventTime = if (jsonObject.isNull("eventTime")) null else jsonObject.getLong("eventTime"),
+                        recurrenceType = jsonObject.optString("recurrenceType", "None")
                     )
                     repository.insert(reminder)
                 }
