@@ -15,6 +15,7 @@ import org.json.JSONObject
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.ZoneId
+import java.util.Calendar
 
 class PhoneListenerService : WearableListenerService() {
 
@@ -106,9 +107,22 @@ class PhoneListenerService : WearableListenerService() {
                     if (reminderId != null) {
                         val reminder = repository.getReminderById(reminderId)
                         if (reminder != null) {
-                            val updatedReminder = reminder.copy(isCompleted = !reminder.isCompleted)
+                            val updatedReminder = if (!reminder.isCompleted && reminder.recurrenceType != "None") {
+                                // If marking a recurring reminder as completed, schedule next occurrence
+                                val nextReminderTime = reminder.reminderTime?.let { calculateNextRecurrence(it, reminder.recurrenceType) }
+                                val nextEventTime = reminder.eventTime?.let { calculateNextRecurrence(it, reminder.recurrenceType) }
+                                
+                                reminder.copy(
+                                    reminderTime = nextReminderTime,
+                                    eventTime = nextEventTime,
+                                    isCompleted = false // Keep it active for the next occurrence
+                                )
+                            } else {
+                                reminder.copy(isCompleted = !reminder.isCompleted)
+                            }
+                            
                             repository.update(updatedReminder)
-                            Log.d(TAG, "Reminder $reminderId completed")
+                            Log.d(TAG, "Reminder $reminderId toggled (dismissed/recurring)")
 
 
                             val jsonObject = JSONObject().apply {
@@ -118,6 +132,7 @@ class PhoneListenerService : WearableListenerService() {
                                 put("reminderTime", updatedReminder.reminderTime)
                                 put("eventTime", updatedReminder.eventTime)
                                 put("isCompleted", updatedReminder.isCompleted)
+                                put("recurrenceType", updatedReminder.recurrenceType)
                             }
 
                             Wearable.getMessageClient(this@PhoneListenerService)
@@ -130,7 +145,7 @@ class PhoneListenerService : WearableListenerService() {
                         }
                     }
                 } catch (e: Exception) {
-                    Log.e(TAG, "Error snoozing reminder", e)
+                    Log.e(TAG, "Error toggling reminder", e)
                 }
             }
         }
@@ -172,6 +187,17 @@ class PhoneListenerService : WearableListenerService() {
         }
 
         return jsonArray.toString()
+    }
+
+    private fun calculateNextRecurrence(currentTime: Long, type: String): Long {
+        val cal = Calendar.getInstance().apply { timeInMillis = currentTime }
+        when (type) {
+            "Daily" -> cal.add(Calendar.DAY_OF_YEAR, 1)
+            "Weekly" -> cal.add(Calendar.WEEK_OF_YEAR, 1)
+            "Monthly" -> cal.add(Calendar.MONTH, 1)
+            "Yearly" -> cal.add(Calendar.YEAR, 1)
+        }
+        return cal.timeInMillis
     }
 
     override fun onDestroy() {
